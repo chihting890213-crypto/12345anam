@@ -171,7 +171,7 @@ export async function deleteFlower(id: number) {
 }
 
 // ─── Timeslot Capacities ──────────────────────────────────────────────────────
-// Helper: count active orders for a given date+timeslot+category combination
+// Helper: count active orders for a given date+timeslot+flowerId combination
 async function countOrdersForFlowerSlot(dbInst: any, date: string, timeslot: string, flowerId: number): Promise<number> {
   const activeStatuses = ["pending", "confirmed", "awaiting_payment", "paid", "processing"];
   const result = await dbInst.select({ count: sql<number>`COUNT(*)` })
