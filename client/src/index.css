@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+@import url("https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,400;0,600;0,700;0,800;0,900;1,400&family=Bebas+Neue&display=swap");
 
 @custom-variant dark (&:is(.dark *));
 
@@ -27,11 +28,6 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
-  --color-chart-1: var(--chart-1);
-  --color-chart-2: var(--chart-2);
-  --color-chart-3: var(--chart-3);
-  --color-chart-4: var(--chart-4);
-  --color-chart-5: var(--chart-5);
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);
@@ -40,77 +36,44 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+  --font-sans: "Nunito", sans-serif;
+  --font-display: "Bebas Neue", sans-serif;
 }
 
 :root {
-  --primary: var(--color-blue-700);
-  --primary-foreground: var(--color-blue-50);
-  --sidebar-primary: var(--color-blue-600);
-  --sidebar-primary-foreground: var(--color-blue-50);
-  --chart-1: var(--color-blue-300);
-  --chart-2: var(--color-blue-500);
-  --chart-3: var(--color-blue-600);
-  --chart-4: var(--color-blue-700);
-  --chart-5: var(--color-blue-800);
-  --radius: 0.65rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.235 0.015 65);
+  --radius: 0.5rem;
+  /* Memphis Peach background */
+  --background: oklch(0.93 0.05 50);
+  --foreground: oklch(0.1 0 0);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.235 0.015 65);
+  --card-foreground: oklch(0.1 0 0);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.235 0.015 65);
-  --secondary: oklch(0.98 0.001 286.375);
-  --secondary-foreground: oklch(0.4 0.015 65);
-  --muted: oklch(0.967 0.001 286.375);
-  --muted-foreground: oklch(0.552 0.016 285.938);
-  --accent: oklch(0.967 0.001 286.375);
-  --accent-foreground: oklch(0.141 0.005 285.823);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.985 0 0);
-  --border: oklch(0.92 0.004 286.32);
-  --input: oklch(0.92 0.004 286.32);
-  --ring: oklch(0.623 0.214 259.815);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.235 0.015 65);
-  --sidebar-accent: oklch(0.967 0.001 286.375);
-  --sidebar-accent-foreground: oklch(0.141 0.005 285.823);
-  --sidebar-border: oklch(0.92 0.004 286.32);
-  --sidebar-ring: oklch(0.623 0.214 259.815);
-}
-
-.dark {
-  --primary: var(--color-blue-700);
-  --primary-foreground: var(--color-blue-50);
-  --sidebar-primary: var(--color-blue-500);
-  --sidebar-primary-foreground: var(--color-blue-50);
-  --background: oklch(0.141 0.005 285.823);
-  --foreground: oklch(0.85 0.005 65);
-  --card: oklch(0.21 0.006 285.885);
-  --card-foreground: oklch(0.85 0.005 65);
-  --popover: oklch(0.21 0.006 285.885);
-  --popover-foreground: oklch(0.85 0.005 65);
-  --secondary: oklch(0.24 0.006 286.033);
-  --secondary-foreground: oklch(0.7 0.005 65);
-  --muted: oklch(0.274 0.006 286.033);
-  --muted-foreground: oklch(0.705 0.015 286.067);
-  --accent: oklch(0.274 0.006 286.033);
-  --accent-foreground:  oklch(0.92 0.005 65);
-  --destructive: oklch(0.704 0.191 22.216);
-  --destructive-foreground: oklch(0.985 0 0);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.488 0.243 264.376);
-  --chart-1: var(--color-blue-300);
-  --chart-2: var(--color-blue-500);
-  --chart-3: var(--color-blue-600);
-  --chart-4: var(--color-blue-700);
-  --chart-5: var(--color-blue-800);
-  --sidebar: oklch(0.21 0.006 285.885);
-  --sidebar-foreground: oklch(0.85 0.005 65);
-  --sidebar-accent: oklch(0.274 0.006 286.033);
-  --sidebar-accent-foreground:  oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.488 0.243 264.376);
+  --popover-foreground: oklch(0.1 0 0);
+  /* Coral primary */
+  --primary: oklch(0.65 0.2 30);
+  --primary-foreground: oklch(1 0 0);
+  /* Mint secondary */
+  --secondary: oklch(0.88 0.1 160);
+  --secondary-foreground: oklch(0.1 0 0);
+  --muted: oklch(0.9 0.03 50);
+  --muted-foreground: oklch(0.45 0 0);
+  /* Lavender accent */
+  --accent: oklch(0.85 0.1 290);
+  --accent-foreground: oklch(0.1 0 0);
+  --destructive: oklch(0.6 0.25 25);
+  --destructive-foreground: oklch(1 0 0);
+  --border: oklch(0.1 0 0);
+  --input: oklch(1 0 0);
+  --ring: oklch(0.65 0.2 30);
+  /* Sidebar - dark Memphis */
+  --sidebar: oklch(0.12 0 0);
+  --sidebar-foreground: oklch(0.95 0 0);
+  --sidebar-primary: oklch(0.65 0.2 30);
+  --sidebar-primary-foreground: oklch(1 0 0);
+  --sidebar-accent: oklch(0.93 0.05 50);
+  --sidebar-accent-foreground: oklch(0.1 0 0);
+  --sidebar-border: oklch(0.25 0 0);
+  --sidebar-ring: oklch(0.65 0.2 30);
 }
 
 @layer base {
@@ -119,59 +82,124 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-family: "Nunito", sans-serif;
+    background-color: #FFD6C0;
+    min-height: 100vh;
   }
   button:not(:disabled),
   [role="button"]:not([aria-disabled="true"]),
   [type="button"]:not(:disabled),
   [type="submit"]:not(:disabled),
-  [type="reset"]:not(:disabled),
   a[href],
-  select:not(:disabled),
-  input[type="checkbox"]:not(:disabled),
-  input[type="radio"]:not(:disabled) {
+  select:not(:disabled) {
     @apply cursor-pointer;
   }
 }
 
+/* ── Memphis Design System ─────────────────────────────────────────────────── */
+
+/* Geometric background pattern */
+.memphis-bg {
+  background-color: #FFD6C0;
+  position: relative;
+  overflow: hidden;
+}
+.memphis-bg::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    radial-gradient(circle, #B8F0D8 8px, transparent 8px),
+    radial-gradient(circle, #D4C5F9 6px, transparent 6px),
+    radial-gradient(circle, #FFF0A0 10px, transparent 10px),
+    radial-gradient(circle, #FFB899 5px, transparent 5px),
+    radial-gradient(circle, #B8F0D8 12px, transparent 12px),
+    radial-gradient(circle, #D4C5F9 4px, transparent 4px);
+  background-size: 180px 180px, 220px 220px, 160px 160px, 140px 140px, 260px 260px, 100px 100px;
+  background-position: 20px 30px, 90px 80px, 150px 20px, 60px 150px, 200px 120px, 40px 200px;
+  opacity: 0.6;
+}
+
+/* Card */
+.memphis-card {
+  background: white;
+  border: 2.5px solid #111111;
+  border-radius: 12px;
+  box-shadow: 4px 4px 0px #111111;
+  transition: transform 0.15s cubic-bezier(0.23, 1, 0.32, 1), box-shadow 0.15s cubic-bezier(0.23, 1, 0.32, 1);
+}
+.memphis-card:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0px #111111;
+}
+
+/* Button */
+.memphis-btn {
+  border: 2.5px solid #111111 !important;
+  border-radius: 8px !important;
+  box-shadow: 3px 3px 0px #111111 !important;
+  font-weight: 800 !important;
+  transition: all 0.12s cubic-bezier(0.23, 1, 0.32, 1) !important;
+}
+.memphis-btn:hover:not(:disabled) {
+  transform: translate(-1px, -1px) !important;
+  box-shadow: 4px 4px 0px #111111 !important;
+}
+.memphis-btn:active:not(:disabled) {
+  transform: translate(1px, 1px) !important;
+  box-shadow: 1px 1px 0px #111111 !important;
+}
+
+/* Badge */
+.memphis-badge {
+  border: 2px solid #111111;
+  border-radius: 6px;
+  font-weight: 800;
+  font-size: 0.7rem;
+  padding: 2px 8px;
+  display: inline-block;
+  letter-spacing: 0.03em;
+}
+
+/* Title */
+.memphis-title {
+  font-family: "Nunito", sans-serif;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  text-shadow: 2px 2px 0px rgba(0,0,0,0.12);
+}
+
+/* Status badge colors */
+.status-pending    { background: #FFF0A0; color: #111; border-color: #111; }
+.status-confirmed  { background: #B8F0D8; color: #111; border-color: #111; }
+.status-awaiting   { background: #D4C5F9; color: #111; border-color: #111; }
+.status-paid       { background: #7DDBB0; color: #111; border-color: #111; }
+.status-processing { background: #FFD6C0; color: #111; border-color: #111; }
+.status-completed  { background: #7DDBB0; color: #111; border-color: #111; }
+.status-cancelled  { background: #FFB0A0; color: #111; border-color: #111; }
+.status-booked     { background: #FF7B6B; color: #fff; border-color: #111; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: #FFD6C0; }
+::-webkit-scrollbar-thumb { background: #111111; border-radius: 4px; }
+
 @layer components {
-  /**
-   * Custom container utility that centers content and adds responsive padding.
-   *
-   * This overrides Tailwind's default container behavior to:
-   * - Auto-center content (mx-auto)
-   * - Add responsive horizontal padding
-   * - Set max-width for large screens
-   *
-   * Usage: <div className="container">...</div>
-   *
-   * For custom widths, use max-w-* utilities directly:
-   * <div className="max-w-6xl mx-auto px-4">...</div>
-   */
   .container {
     width: 100%;
     margin-left: auto;
     margin-right: auto;
-    padding-left: 1rem; /* 16px - mobile padding */
+    padding-left: 1rem;
     padding-right: 1rem;
   }
-
-  .flex {
-    min-height: 0;
-    min-width: 0;
-  }
-
+  .flex { min-height: 0; min-width: 0; }
   @media (min-width: 640px) {
-    .container {
-      padding-left: 1.5rem; /* 24px - tablet padding */
-      padding-right: 1.5rem;
-    }
+    .container { padding-left: 1.5rem; padding-right: 1.5rem; }
   }
-
   @media (min-width: 1024px) {
-    .container {
-      padding-left: 2rem; /* 32px - desktop padding */
-      padding-right: 2rem;
-      max-width: 1280px; /* Standard content width */
-    }
+    .container { padding-left: 2rem; padding-right: 2rem; max-width: 1280px; }
   }
 }

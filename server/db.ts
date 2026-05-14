@@ -1,11 +1,20 @@
-import { eq } from "drizzle-orm";
+import { eq, desc, and, like, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users } from "../drizzle/schema";
+import {
+  InsertUser, users,
+  staffAccounts, InsertStaffAccount,
+  flowerFolders, InsertFlowerFolder,
+  flowers, InsertFlower,
+  regions, InsertRegion,
+  timeslotCapacities, InsertTimeslotCapacity,
+  bankAccounts, InsertBankAccount,
+  orders, InsertOrder,
+  orderMessages, InsertOrderMessage,
+} from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
-// Lazily create the drizzle instance so local tooling can run without a DB.
 export async function getDb() {
   if (!_db && process.env.DATABASE_URL) {
     try {
@@ -18,26 +27,16 @@ export async function getDb() {
   return _db;
 }
 
+// ─── Users ────────────────────────────────────────────────────────────────────
 export async function upsertUser(user: InsertUser): Promise<void> {
-  if (!user.openId) {
-    throw new Error("User openId is required for upsert");
-  }
-
+  if (!user.openId) throw new Error("User openId is required for upsert");
   const db = await getDb();
-  if (!db) {
-    console.warn("[Database] Cannot upsert user: database not available");
-    return;
-  }
-
+  if (!db) { console.warn("[Database] Cannot upsert user: database not available"); return; }
   try {
-    const values: InsertUser = {
-      openId: user.openId,
-    };
+    const values: InsertUser = { openId: user.openId };
     const updateSet: Record<string, unknown> = {};
-
     const textFields = ["name", "email", "loginMethod"] as const;
     type TextField = (typeof textFields)[number];
-
     const assignNullable = (field: TextField) => {
       const value = user[field];
       if (value === undefined) return;
@@ -45,48 +44,282 @@ export async function upsertUser(user: InsertUser): Promise<void> {
       values[field] = normalized;
       updateSet[field] = normalized;
     };
-
     textFields.forEach(assignNullable);
-
-    if (user.lastSignedIn !== undefined) {
-      values.lastSignedIn = user.lastSignedIn;
-      updateSet.lastSignedIn = user.lastSignedIn;
-    }
-    if (user.role !== undefined) {
-      values.role = user.role;
-      updateSet.role = user.role;
-    } else if (user.openId === ENV.ownerOpenId) {
-      values.role = 'admin';
-      updateSet.role = 'admin';
-    }
-
-    if (!values.lastSignedIn) {
-      values.lastSignedIn = new Date();
-    }
-
-    if (Object.keys(updateSet).length === 0) {
-      updateSet.lastSignedIn = new Date();
-    }
-
-    await db.insert(users).values(values).onDuplicateKeyUpdate({
-      set: updateSet,
-    });
-  } catch (error) {
-    console.error("[Database] Failed to upsert user:", error);
-    throw error;
-  }
+    if (user.lastSignedIn !== undefined) { values.lastSignedIn = user.lastSignedIn; updateSet.lastSignedIn = user.lastSignedIn; }
+    if (user.role !== undefined) { values.role = user.role; updateSet.role = user.role; }
+    else if (user.openId === ENV.ownerOpenId) { values.role = 'admin'; updateSet.role = 'admin'; }
+    if (!values.lastSignedIn) values.lastSignedIn = new Date();
+    if (Object.keys(updateSet).length === 0) updateSet.lastSignedIn = new Date();
+    await db.insert(users).values(values).onDuplicateKeyUpdate({ set: updateSet });
+  } catch (error) { console.error("[Database] Failed to upsert user:", error); throw error; }
 }
 
 export async function getUserByOpenId(openId: string) {
   const db = await getDb();
-  if (!db) {
-    console.warn("[Database] Cannot get user: database not available");
-    return undefined;
-  }
-
+  if (!db) return undefined;
   const result = await db.select().from(users).where(eq(users.openId, openId)).limit(1);
-
   return result.length > 0 ? result[0] : undefined;
 }
 
-// TODO: add feature queries here as your schema grows.
+// ─── Staff Accounts ───────────────────────────────────────────────────────────
+export async function getAllStaff() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select({
+    id: staffAccounts.id,
+    username: staffAccounts.username,
+    displayName: staffAccounts.displayName,
+    role: staffAccounts.role,
+    isActive: staffAccounts.isActive,
+    createdAt: staffAccounts.createdAt,
+    updatedAt: staffAccounts.updatedAt,
+  }).from(staffAccounts).orderBy(desc(staffAccounts.createdAt));
+}
+
+export async function getStaffByUsername(username: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(staffAccounts).where(eq(staffAccounts.username, username)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function getStaffById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(staffAccounts).where(eq(staffAccounts.id, id)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function createStaff(data: InsertStaffAccount) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.insert(staffAccounts).values(data);
+}
+
+export async function updateStaff(id: number, data: Partial<InsertStaffAccount>) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.update(staffAccounts).set(data).where(eq(staffAccounts.id, id));
+}
+
+export async function deleteStaff(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.delete(staffAccounts).where(eq(staffAccounts.id, id));
+}
+
+// ─── Flower Folders ───────────────────────────────────────────────────────────
+export async function getAllFolders() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(flowerFolders).orderBy(flowerFolders.sortOrder);
+}
+
+export async function createFolder(data: InsertFlowerFolder) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.insert(flowerFolders).values(data);
+}
+
+export async function updateFolder(id: number, data: Partial<InsertFlowerFolder>) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.update(flowerFolders).set(data).where(eq(flowerFolders.id, id));
+}
+
+export async function deleteFolder(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.delete(flowerFolders).where(eq(flowerFolders.id, id));
+}
+
+// ─── Flowers ──────────────────────────────────────────────────────────────────
+export async function getAllFlowers() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(flowers).orderBy(flowers.sortOrder, flowers.name);
+}
+
+export async function getActiveFlowers() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(flowers).where(eq(flowers.isActive, true)).orderBy(flowers.sortOrder, flowers.name);
+}
+
+export async function getFlowerById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(flowers).where(eq(flowers.id, id)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function createFlower(data: InsertFlower) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.insert(flowers).values(data);
+}
+
+export async function updateFlower(id: number, data: Partial<InsertFlower>) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.update(flowers).set(data).where(eq(flowers.id, id));
+}
+
+export async function deleteFlower(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.delete(flowers).where(eq(flowers.id, id));
+}
+
+// ─── Regions ──────────────────────────────────────────────────────────────────
+export async function getAllRegions() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(regions).orderBy(regions.area);
+}
+
+export async function createRegion(data: InsertRegion) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.insert(regions).values(data);
+}
+
+export async function updateRegion(id: number, data: Partial<InsertRegion>) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.update(regions).set(data).where(eq(regions.id, id));
+}
+
+export async function deleteRegion(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.delete(regions).where(eq(regions.id, id));
+}
+
+// ─── Timeslot Capacities ──────────────────────────────────────────────────────
+export async function getCapacitiesByDate(date: string) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(timeslotCapacities).where(eq(timeslotCapacities.date, date));
+}
+
+export async function getCapacitiesByDateRange(startDate: string, endDate: string) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(timeslotCapacities).where(
+    and(
+      sql`${timeslotCapacities.date} >= ${startDate}`,
+      sql`${timeslotCapacities.date} <= ${endDate}`
+    )
+  );
+}
+
+export async function upsertCapacity(data: InsertTimeslotCapacity) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.insert(timeslotCapacities).values(data).onDuplicateKeyUpdate({
+    set: { maxCapacity: data.maxCapacity }
+  });
+}
+
+export async function deleteCapacity(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.delete(timeslotCapacities).where(eq(timeslotCapacities.id, id));
+}
+
+// ─── Bank Accounts ────────────────────────────────────────────────────────────
+export async function getAllBankAccounts() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(bankAccounts).orderBy(bankAccounts.sortOrder);
+}
+
+export async function createBankAccount(data: InsertBankAccount) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.insert(bankAccounts).values(data);
+}
+
+export async function updateBankAccount(id: number, data: Partial<InsertBankAccount>) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.update(bankAccounts).set(data).where(eq(bankAccounts.id, id));
+}
+
+export async function deleteBankAccount(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.delete(bankAccounts).where(eq(bankAccounts.id, id));
+}
+
+// ─── Orders ───────────────────────────────────────────────────────────────────
+export async function getAllOrders(filters?: { status?: string; date?: string; search?: string }) {
+  const db = await getDb();
+  if (!db) return [];
+  const conditions: any[] = [];
+  if (filters?.status && filters.status !== 'all') conditions.push(eq(orders.status, filters.status as any));
+  if (filters?.date) conditions.push(eq(orders.deliveryDate, filters.date));
+  if (filters?.search) conditions.push(like(orders.orderNumber, `%${filters.search}%`));
+  let query = db.select().from(orders).$dynamic();
+  if (conditions.length > 0) query = query.where(and(...conditions));
+  return query.orderBy(desc(orders.createdAt));
+}
+
+export async function getOrderByNumber(orderNumber: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(orders).where(eq(orders.orderNumber, orderNumber)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function getOrderById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(orders).where(eq(orders.id, id)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function createOrder(data: InsertOrder) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.insert(orders).values(data);
+}
+
+export async function updateOrder(id: number, data: Partial<InsertOrder>) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.update(orders).set(data).where(eq(orders.id, id));
+}
+
+export async function getOrdersByDate(date: string) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(orders).where(eq(orders.deliveryDate, date)).orderBy(orders.timeslot);
+}
+
+export async function getOrderCountByDateTimeslot(date: string, timeslot: string, category?: string) {
+  const db = await getDb();
+  if (!db) return 0;
+  const conditions: any[] = [
+    eq(orders.deliveryDate, date),
+    eq(orders.timeslot, timeslot),
+    sql`${orders.status} NOT IN ('cancelled', 'fully_booked')`,
+  ];
+  if (category && category !== 'all') conditions.push(eq(orders.category, category as any));
+  const result = await db.select({ count: sql<number>`count(*)` }).from(orders).where(and(...conditions));
+  return Number(result[0]?.count ?? 0);
+}
+
+// ─── Order Messages ───────────────────────────────────────────────────────────
+export async function getMessagesByOrderId(orderId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(orderMessages).where(eq(orderMessages.orderId, orderId)).orderBy(orderMessages.createdAt);
+}
+
+export async function createMessage(data: InsertOrderMessage) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.insert(orderMessages).values(data);
+}

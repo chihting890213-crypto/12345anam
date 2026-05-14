@@ -1,0 +1,85 @@
+version: "3.9"
+
+services:
+  # ─── MySQL Database ──────────────────────────────────────────────────────────
+  db:
+    image: mysql:8.0
+    container_name: flower_db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-flower_root_2024}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-flower_ordering}
+      MYSQL_USER: ${MYSQL_USER:-flower_user}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-flower_pass_2024}
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./docker/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    ports:
+      - "3306:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD:-flower_root_2024}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - flower_net
+
+  # ─── Application Server ───────────────────────────────────────────────────────
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: flower_app
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: mysql://${MYSQL_USER:-flower_user}:${MYSQL_PASSWORD:-flower_pass_2024}@db:3306/${MYSQL_DATABASE:-flower_ordering}
+      JWT_SECRET: ${JWT_SECRET:-change_this_to_a_long_random_secret_string_in_production}
+      # OAuth placeholders (not used in staff-only mode, but required by framework)
+      VITE_APP_ID: standalone
+      OAUTH_SERVER_URL: http://localhost
+      VITE_OAUTH_PORTAL_URL: http://localhost
+      OWNER_OPEN_ID: standalone
+      OWNER_NAME: Admin
+      BUILT_IN_FORGE_API_URL: http://localhost
+      BUILT_IN_FORGE_API_KEY: standalone
+      VITE_FRONTEND_FORGE_API_KEY: standalone
+      VITE_FRONTEND_FORGE_API_URL: http://localhost
+    ports:
+      - "${APP_PORT:-8080}:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - flower_net
+    volumes:
+      - app_uploads:/app/uploads
+
+  # ─── Optional: Nginx Reverse Proxy ───────────────────────────────────────────
+  # Uncomment to enable HTTPS with Let's Encrypt via nginx
+  # nginx:
+  #   image: nginx:alpine
+  #   container_name: flower_nginx
+  #   restart: unless-stopped
+  #   ports:
+  #     - "80:80"
+  #     - "443:443"
+  #   volumes:
+  #     - ./docker/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+  #     - ./docker/ssl:/etc/nginx/ssl:ro
+  #   depends_on:
+  #     - app
+  #   networks:
+  #     - flower_net
+
+volumes:
+  db_data:
+    driver: local
+  app_uploads:
+    driver: local
+
+networks:
+  flower_net:
+    driver: bridge
