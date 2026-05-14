@@ -50,6 +50,10 @@ export type StaffAccount = typeof staffAccounts.$inferSelect;
 export type InsertStaffAccount = typeof staffAccounts.$inferInsert;
 
 // ─── Flower Folders ────────────────────────────────────────────────────────────
+// ─── Relations ─────────────────────────────────────────────────────────────────
+import { relations } from "drizzle-orm";
+// Note: relations import already exists above
+
 export const flowerFolders = mysqlTable("flower_folders", {
   id: int("id").autoincrement().primaryKey(),
   name: varchar("name", { length: 128 }).notNull(),
@@ -85,7 +89,7 @@ export const timeslotCapacities = mysqlTable("timeslot_capacities", {
   id: int("id").autoincrement().primaryKey(),
   date: varchar("date", { length: 10 }).notNull(),
   timeslot: varchar("timeslot", { length: 32 }).notNull(),
-  category: mysqlEnum("category", ["holiday", "wedding", "funeral", "other", "all"]).default("all").notNull(),
+  flowerId: int("flowerId").notNull(),
   maxCapacity: int("maxCapacity").notNull(),
   currentCount: int("currentCount").default(0).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
@@ -93,6 +97,13 @@ export const timeslotCapacities = mysqlTable("timeslot_capacities", {
 });
 export type TimeslotCapacity = typeof timeslotCapacities.$inferSelect;
 export type InsertTimeslotCapacity = typeof timeslotCapacities.$inferInsert;
+
+// Foreign key relation
+export const timeslotCapacitiesRelations = relations(timeslotCapacities, ({ one }) => ({
+  flower: one(flowers, { fields: [timeslotCapacities.flowerId], references: [flowers.id] }),
+}));
+
+
 
 // ─── Bank Accounts ─────────────────────────────────────────────────────────────
 export const bankAccounts = mysqlTable("bank_accounts", {
@@ -156,6 +167,32 @@ export const orders = mysqlTable("orders", {
 });
 export type Order = typeof orders.$inferSelect;
 export type InsertOrder = typeof orders.$inferInsert;
+
+// ─── Order Items (Multiple flowers per order) ──────────────────────────────────
+export const orderItems = mysqlTable("order_items", {
+  id: int("id").autoincrement().primaryKey(),
+  orderId: int("orderId").notNull(),
+  flowerId: int("flowerId").notNull(),
+  flowerName: varchar("flowerName", { length: 128 }),
+  quantity: int("quantity").default(1).notNull(),
+  unit: varchar("unit", { length: 32 }).default("束"),
+  price: int("price").default(0),
+  customPrice: int("customPrice"),
+  subtotal: int("subtotal").default(0),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type OrderItem = typeof orderItems.$inferSelect;
+export type InsertOrderItem = typeof orderItems.$inferInsert;
+
+export const orderItemsRelations = relations(orderItems, ({ one }) => ({
+  order: one(orders, { fields: [orderItems.orderId], references: [orders.id] }),
+  flower: one(flowers, { fields: [orderItems.flowerId], references: [flowers.id] }),
+}));
+
+export const ordersRelations = relations(orders, ({ many }) => ({
+  items: many(orderItems),
+}));
+
 
 // ─── Order Messages (Staff-Customer Interaction) ───────────────────────────────
 export const orderMessages = mysqlTable("order_messages", {
