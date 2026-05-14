@@ -257,7 +257,7 @@ export default function CustomerPortalPage() {
                   className="w-full px-4 py-3 bg-white border-[2px] border-black rounded-lg font-bold"
                 />
                 <div className="text-xs font-bold text-black/60">
-                  {orderDetails.deliveryType === "pickup" ? "(店內領取)" : "(外送)"}
+                  (店內自取/配送地址)
                 </div>
               </div>
             </div>
@@ -594,7 +594,7 @@ export default function CustomerPortalPage() {
                     <InfoRow label="訂單編號" value={order.orderNumber} />
                     <InfoRow label="訂花人" value={order.orderingPersonName} />
                     <InfoRow label="收花人" value={order.recipientPersonName} />
-                    <InfoRow label="配送地址" value={order.recipientPersonAddress ? `${order.recipientPersonAddress} (${order.deliveryType === "pickup" ? "店內領取" : "外送"})` : undefined} />
+                    <InfoRow label="配送地址" value={order.recipientPersonAddress ? `${order.recipientPersonAddress} (店內自取/配送地址)` : undefined} />
                     <InfoRow label="配送日期" value={order.deliveryDate} />
                     <InfoRow label="時段" value={order.timeslot} />
                     <InfoRow label="花卉" value={order.flowerName} />
