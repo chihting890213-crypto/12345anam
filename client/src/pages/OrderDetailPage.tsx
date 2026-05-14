@@ -108,6 +108,20 @@ export default function OrderDetailPage() {
           </button>
         </div>
 
+        {/* Order acceptance section - only show when pending */}
+        {order.status === "pending" && (
+          <div className="grid grid-cols-2 gap-3 mb-4 p-4 bg-white border-[2px] border-black rounded-lg">
+            <button onClick={() => handleStatusChange("confirmed")} disabled={updateStatus.isPending}
+              className="memphis-btn px-4 py-3 bg-[#B8F0D8] text-black font-black uppercase rounded-lg">
+              ✓ 接受訂單
+            </button>
+            <button onClick={() => handleStatusChange("cancelled")} disabled={updateStatus.isPending}
+              className="memphis-btn px-4 py-3 bg-[#FF7B6B] text-white font-black uppercase rounded-lg">
+              ✕ 拒絕訂單
+            </button>
+          </div>
+        )}
+
         {/* Payment info when moving to awaiting_payment */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>

@@ -190,13 +190,12 @@ export const appRouter = router({
         folderId: z.number().optional(),
         name: z.string().min(1),
         description: z.string().optional(),
-        price: z.string().optional(),
+        price: z.union([z.string(), z.number()]).optional().transform(v => v ? String(v) : undefined),
         unit: z.string().default("束"),
         category: z.enum(["holiday", "other"]).default("other"),
         isCustom: z.boolean().default(false),
         imageUrl: z.string().optional(),
         isActive: z.boolean().default(true),
-        sortOrder: z.number().default(0),
       }))
       .mutation(async ({ input }) => { await db.createFlower(input as any); return { success: true }; }),
     update: staffProcedure
@@ -205,13 +204,12 @@ export const appRouter = router({
         folderId: z.number().nullable().optional(),
         name: z.string().optional(),
         description: z.string().optional(),
-        price: z.string().optional(),
+        price: z.union([z.string(), z.number()]).optional().transform(v => v ? String(v) : undefined),
         unit: z.string().optional(),
         category: z.enum(["holiday", "other"]).optional(),
         isCustom: z.boolean().optional(),
         imageUrl: z.string().optional(),
         isActive: z.boolean().optional(),
-        sortOrder: z.number().optional(),
       }))
       .mutation(async ({ input }) => { const { id, ...rest } = input; await db.updateFlower(id, rest as any); return { success: true }; }),
     delete: staffProcedure

@@ -332,11 +332,29 @@ export default function CustomerPortalPage() {
                       .filter((f) => f.category === orderDetails.category)
                       .map((f) => (
                         <option key={f.id} value={f.id}>
-                          {f.name} - ${f.price}
+                          {f.name}{f.price ? ` - $${f.price}` : ' - 自訂價格'}
                         </option>
                       ))}
                   </select>
                 </div>
+
+                {/* Custom price input - only for isCustom flowers */}
+                {orderDetails.flowerId && (() => {
+                  const selected = flowers.find(f => f.id === parseInt(orderDetails.flowerId));
+                  return selected?.isCustom ? (
+                    <div>
+                      <label className="block text-xs font-black uppercase mb-1">自訂價格</label>
+                      <input
+                        type="number"
+                        min={0}
+                        value={orderDetails.totalAmount || ''}
+                        onChange={(e) => setOrderDetails((o) => ({ ...o, totalAmount: parseInt(e.target.value) || 0 }))}
+                        placeholder="請輸入價格"
+                        className="w-full px-4 py-3 bg-white border-[2px] border-black rounded-lg font-bold"
+                      />
+                    </div>
+                  ) : null;
+                })()}
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>

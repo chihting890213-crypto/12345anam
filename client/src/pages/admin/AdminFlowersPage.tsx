@@ -6,12 +6,11 @@ type FlowerForm = {
   folderId?: number;
   name: string;
   description: string;
-  price: string;
+  price?: string;
   unit: string;
   category: "holiday" | "other";
   isCustom: boolean;
   isActive: boolean;
-  sortOrder: number;
 };
 
 const emptyFlower: FlowerForm = {
@@ -22,7 +21,6 @@ const emptyFlower: FlowerForm = {
   category: "other",
   isCustom: false,
   isActive: true,
-  sortOrder: 0,
 };
 
 export default function AdminFlowersPage() {
@@ -109,34 +107,30 @@ export default function AdminFlowersPage() {
 
   const handleCreateFlower = () => {
     if (!selectedFolderId) {
-      toast.error("請先選擇分類");
+      toast.error("請先選擇分顧");
       return;
     }
     if (!flowerForm.name.trim()) {
-      toast.error("請填寫花卉名稱");
-      return;
-    }
-    if (!flowerForm.price) {
-      toast.error("請填寫價格");
+      toast.error("請填寶花卉名稱");
       return;
     }
     createFlower.mutate({
       ...flowerForm,
       folderId: selectedFolderId,
-      price: parseFloat(flowerForm.price),
+      price: flowerForm.price ? String(parseInt(flowerForm.price)) : undefined,
     } as any);
   };
 
   const handleUpdateFlower = () => {
     if (!editFlowerId) return;
     if (!flowerForm.name.trim()) {
-      toast.error("請填寫花卉名稱");
+      toast.error("請填寶花卉名稱");
       return;
     }
     updateFlower.mutate({
       id: editFlowerId,
       ...flowerForm,
-      price: parseFloat(flowerForm.price),
+      price: flowerForm.price ? String(parseInt(flowerForm.price)) : undefined,
     } as any);
   };
 
@@ -362,22 +356,22 @@ export default function AdminFlowersPage() {
 
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <label className="block text-xs font-black uppercase mb-1">
-                          價格
-                        </label>
-                        <input
-                          type="number"
-                          step="0.01"
-                          value={flowerForm.price}
-                          onChange={(e) =>
-                            setFlowerForm((f) => ({
-                              ...f,
-                              price: e.target.value,
-                            }))
-                          }
-                          placeholder="0"
-                          className="w-full px-4 py-3 bg-white border-[2px] border-black rounded-lg font-bold"
-                        />
+                      <label className="block text-xs font-black uppercase mb-1">
+                        價格（可選）
+                      </label>
+                      <input
+                        type="number"
+                        step="1"
+                        value={flowerForm.price || ""}
+                        onChange={(e) =>
+                          setFlowerForm((f) => ({
+                            ...f,
+                            price: e.target.value || undefined,
+                          }))
+                        }
+                        placeholder="留空則無預設價格"
+                        className="w-full px-4 py-3 bg-white border-[2px] border-black rounded-lg font-bold"
+                      />
                       </div>
                       <div>
                         <label className="block text-xs font-black uppercase mb-1">
@@ -398,41 +392,23 @@ export default function AdminFlowersPage() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-xs font-black uppercase mb-1">
-                          類別
-                        </label>
-                        <select
-                          value={flowerForm.category}
-                          onChange={(e) =>
-                            setFlowerForm((f) => ({
-                              ...f,
-                              category: e.target.value as any,
-                            }))
-                          }
-                          className="w-full px-4 py-3 bg-white border-[2px] border-black rounded-lg font-bold"
-                        >
-                          <option value="holiday">節慶花卉配送</option>
-                          <option value="other">其他</option>
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block text-xs font-black uppercase mb-1">
-                          排序
-                        </label>
-                        <input
-                          type="number"
-                          value={flowerForm.sortOrder}
-                          onChange={(e) =>
-                            setFlowerForm((f) => ({
-                              ...f,
-                              sortOrder: Number(e.target.value),
-                            }))
-                          }
-                          className="w-full px-4 py-3 bg-white border-[2px] border-black rounded-lg font-bold"
-                        />
-                      </div>
+                    <div>
+                      <label className="block text-xs font-black uppercase mb-1">
+                        類別
+                      </label>
+                      <select
+                        value={flowerForm.category}
+                        onChange={(e) =>
+                          setFlowerForm((f) => ({
+                            ...f,
+                            category: e.target.value as any,
+                          }))
+                        }
+                        className="w-full px-4 py-3 bg-white border-[2px] border-black rounded-lg font-bold"
+                      >
+                        <option value="holiday">節慶花卉配送</option>
+                        <option value="other">其他</option>
+                      </select>
                     </div>
 
                     <div className="flex items-center gap-3">
@@ -538,7 +514,6 @@ export default function AdminFlowersPage() {
                               category: flower.category as any,
                               isCustom: flower.isCustom,
                               isActive: flower.isActive,
-                              sortOrder: flower.sortOrder,
                               folderId: flower.folderId ?? undefined,
                             });
                             setShowFlowerForm(true);
