@@ -49,6 +49,10 @@ export default function OrderDetailPage() {
     onSuccess: () => { toast.success("訂單已更新"); utils.orders.detail.invalidate({ id: orderId }); setEditMode(false); },
     onError: e => toast.error(e.message),
   });
+  const deleteOrder = trpc.orders.delete.useMutation({
+    onSuccess: () => { toast.success("訂單已刪除"); navigate("/orders"); },
+    onError: e => toast.error(e.message),
+  });
   const sendMsg = trpc.messages.sendStaff.useMutation({
     onSuccess: () => { toast.success("訊息已發送"); utils.messages.listByOrderId.invalidate({ orderId }); setMsgContent(""); },
     onError: e => toast.error(e.message),
@@ -320,6 +324,10 @@ export default function OrderDetailPage() {
               {updateOrder.isPending ? "儲存中..." : "儲存變更"}
             </button>
             <button onClick={() => setEditMode(false)} className="memphis-btn px-6 py-2.5 bg-white text-black font-black uppercase rounded-lg">取消</button>
+            <button onClick={() => { if (confirm("確定要刪除此訂單？此操作無法復原。")) deleteOrder.mutate({ id: orderId }); }} disabled={deleteOrder.isPending}
+              className="memphis-btn px-6 py-2.5 bg-[#FFB0A0] text-black font-black uppercase rounded-lg ml-auto">
+              {deleteOrder.isPending ? "刪除中..." : "🗑️ 刪除訂單"}
+            </button>
           </div>
         </div>
       )}

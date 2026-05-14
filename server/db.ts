@@ -306,6 +306,19 @@ export async function updateOrder(id: number, data: Partial<InsertOrder>) {
   await db.update(orders).set(data).where(eq(orders.id, id));
 }
 
+export async function getOrderBySenderName(senderName: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(orders).where(eq(orders.senderName, senderName)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function deleteOrder(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.delete(orders).where(eq(orders.id, id));
+}
+
 export async function getOrdersByDate(date: string) {
   const db = await getDb();
   if (!db) return [];

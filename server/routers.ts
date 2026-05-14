@@ -291,6 +291,18 @@ export const appRouter = router({
         return publicOrder;
       }),
 
+    byNumberOrSender: publicProcedure
+      .input(z.object({ query: z.string() }))
+      .query(async ({ input }) => {
+        let order = await db.getOrderByNumber(input.query);
+        if (!order) {
+          order = await db.getOrderBySenderName(input.query);
+        }
+        if (!order) throw new TRPCError({ code: "NOT_FOUND", message: "找不到此訂單" });
+        const { internalNote, staffId, ...publicOrder } = order;
+        return publicOrder;
+      }),
+
     detail: staffProcedure
       .input(z.object({ id: z.number() }))
       .query(async ({ input }) => {
@@ -394,6 +406,13 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         const { id, ...rest } = input;
         await db.updateOrder(id, rest as any);
+        return { success: true };
+      }),
+
+    delete: staffProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.deleteOrder(input.id);
         return { success: true };
       }),
   }),

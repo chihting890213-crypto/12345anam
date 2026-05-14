@@ -44,8 +44,8 @@ export default function CustomerPortalPage() {
   });
 
   // Queries
-  const { data: order, isLoading: orderLoading, error: orderError } = trpc.orders.byNumber.useQuery(
-    { orderNumber: queriedNumber },
+  const { data: order, isLoading: orderLoading, error: orderError } = trpc.orders.byNumberOrSender.useQuery(
+    { query: queriedNumber },
     { enabled: !!queriedNumber, retry: false }
   );
   const { data: messages = [], refetch: refetchMsgs } = trpc.messages.list.useQuery(
@@ -97,10 +97,10 @@ export default function CustomerPortalPage() {
   const handleQuery = (e: React.FormEvent) => {
     e.preventDefault();
     if (!orderNumber.trim()) {
-      toast.error("請輸入訂單編號");
+      toast.error("請輸入訂單編號或寄件人名字");
       return;
     }
-    setQueriedNumber(orderNumber.trim().toUpperCase());
+    setQueriedNumber(orderNumber.trim());
   };
 
   const handleCreateOrder = (e: React.FormEvent) => {
@@ -474,7 +474,7 @@ export default function CustomerPortalPage() {
                 <input
                   value={orderNumber}
                   onChange={(e) => setOrderNumber(e.target.value)}
-                  placeholder="例：FO20240101ABCDEF"
+                  placeholder="例：訂單編號或寄件人名字"
                   className="flex-1 px-4 py-3 bg-white border-[2px] border-black rounded-lg font-bold text-base focus:outline-none focus:shadow-[3px_3px_0px_#111] transition-shadow"
                 />
                 <button
