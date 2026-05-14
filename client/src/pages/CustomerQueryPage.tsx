@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
+import { useLocation } from "wouter";
 
 const statusMap: Record<string, { label: string; cls: string; desc: string }> = {
   pending:          { label: "待審核",   cls: "status-pending",    desc: "您的訂單正在等待員工審核" },
@@ -14,8 +15,13 @@ const statusMap: Record<string, { label: string; cls: string; desc: string }> = 
 };
 
 export default function CustomerQueryPage() {
-  const [orderNumber, setOrderNumber] = useState("");
-  const [queriedNumber, setQueriedNumber] = useState("");
+  const [location] = useLocation();
+  // Support pre-filling order number from URL query param ?order=XXXX
+  const urlOrderNumber = typeof window !== "undefined"
+    ? new URLSearchParams(window.location.search).get("order") || ""
+    : "";
+  const [orderNumber, setOrderNumber] = useState(urlOrderNumber);
+  const [queriedNumber, setQueriedNumber] = useState(urlOrderNumber);
   const [msgContent, setMsgContent] = useState("");
   const [senderName, setSenderName] = useState("");
 
@@ -58,11 +64,18 @@ export default function CustomerQueryPage() {
       <div className="fixed bottom-8 right-8 w-12 h-12 bg-[#FF7B6B] border-[3px] border-black rounded-full opacity-60 pointer-events-none" />
 
       <div className="relative z-10 max-w-2xl mx-auto px-4 py-8">
+        {/* Back to home */}
+        <div className="mb-6">
+          <a href="/" className="inline-flex items-center gap-2 bg-white border-[2px] border-black rounded-full px-4 py-2 font-black text-sm shadow-[2px_2px_0px_#111] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[3px_3px_0px_#111] transition-all">
+            ← 返回首頁
+          </a>
+        </div>
         {/* Header */}
         <div className="text-center mb-8">
           <div className="inline-block bg-[#FF7B6B] border-[3px] border-black rounded-2xl px-6 py-3 mb-4 shadow-[4px_4px_0px_#111]">
             <span className="text-4xl">🌸</span>
           </div>
+          <div className="font-black text-2xl tracking-widest text-black mb-1" style={{fontFamily:'serif'}}>金美芳花苑</div>
           <h1 className="memphis-title text-4xl text-black mb-2">訂單查詢</h1>
           <p className="text-black font-bold">輸入訂單編號查詢您的訂單狀態</p>
           <div className="flex justify-center gap-2 mt-3">

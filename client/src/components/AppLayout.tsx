@@ -12,13 +12,12 @@ type NavItem = {
 };
 
 const navItems: NavItem[] = [
-  { path: "/", label: "首頁", icon: "🏠" },
+  { path: "/dashboard", label: "首頁", icon: "🏠" },
   { path: "/orders", label: "訂單列表", icon: "📋" },
   { path: "/orders/create", label: "新增訂單", icon: "➕" },
   { path: "/calendar", label: "日曆視圖", icon: "📅" },
   { path: "/admin/staff", label: "員工管理", icon: "👥", adminOnly: true },
   { path: "/admin/flowers", label: "花卉管理", icon: "🌸", adminOnly: true },
-  { path: "/admin/regions", label: "區域管理", icon: "🗺️", adminOnly: true },
   { path: "/admin/capacities", label: "容量設定", icon: "⚙️", adminOnly: true },
   { path: "/admin/bank-accounts", label: "付款帳號", icon: "🏦", adminOnly: true },
 ];
@@ -42,8 +41,8 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             🌸
           </div>
           <div>
-            <div className="text-white font-black text-sm uppercase tracking-widest">FLOWER</div>
-            <div className="text-[#FF7B6B] font-black text-xs uppercase tracking-widest">ORDER SYS</div>
+            <div className="text-white font-black text-base tracking-widest" style={{fontFamily:'serif'}}>金美芳花苑</div>
+            <div className="text-[#FF7B6B] font-black text-xs uppercase tracking-widest">Flower Garden</div>
           </div>
         </div>
       </div>

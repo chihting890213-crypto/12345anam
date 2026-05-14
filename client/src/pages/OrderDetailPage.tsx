@@ -27,7 +27,6 @@ export default function OrderDetailPage() {
   const { data: order, isLoading } = trpc.orders.detail.useQuery({ id: orderId });
   const { data: messages = [] } = trpc.messages.listByOrderId.useQuery({ orderId });
   const { data: bankAccounts = [] } = trpc.bankAccounts.list.useQuery();
-  const { data: regions = [] } = trpc.regions.list.useQuery();
 
   const [msgContent, setMsgContent] = useState("");
   const [editMode, setEditMode] = useState(false);
@@ -52,7 +51,6 @@ export default function OrderDetailPage() {
   if (!order) return <div className="p-8 text-center font-bold text-gray-400 text-xl">找不到此訂單</div>;
 
   const s = statusMap[order.status] || { label: order.status, cls: "" };
-  const region = regions.find(r => r.id === order.regionId);
 
   const handleStatusChange = (newStatus: string) => {
     const payload: any = { id: orderId, status: newStatus as any };
@@ -149,7 +147,6 @@ export default function OrderDetailPage() {
             <InfoRow label="電話" value={order.recipientPhone} />
             <InfoRow label="地址" value={order.recipientAddress} />
             <InfoRow label="配送方式" value={order.deliveryType === "pickup" ? "自取" : "外送"} />
-            {region && <InfoRow label="區域" value={`${region.name}（NT$ ${region.deliveryFee}）`} />}
             <InfoRow label="配送日期" value={order.deliveryDate} />
             <InfoRow label="時段" value={order.timeslot} />
           </div>

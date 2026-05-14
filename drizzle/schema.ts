@@ -78,17 +78,7 @@ export const flowers = mysqlTable("flowers", {
 export type Flower = typeof flowers.$inferSelect;
 export type InsertFlower = typeof flowers.$inferInsert;
 
-// ─── Regions ───────────────────────────────────────────────────────────────────
-export const regions = mysqlTable("regions", {
-  id: int("id").autoincrement().primaryKey(),
-  name: varchar("name", { length: 64 }).notNull(),
-  area: mysqlEnum("area", ["north", "central", "south", "east"]).notNull(),
-  deliveryFee: decimal("deliveryFee", { precision: 10, scale: 2 }).default("0"),
-  isActive: boolean("isActive").default(true).notNull(),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-});
-export type Region = typeof regions.$inferSelect;
-export type InsertRegion = typeof regions.$inferInsert;
+
 
 // ─── Timeslot Capacities ───────────────────────────────────────────────────────
 export const timeslotCapacities = mysqlTable("timeslot_capacities", {
@@ -131,7 +121,6 @@ export const orders = mysqlTable("orders", {
   recipientPhone: varchar("recipientPhone", { length: 32 }).notNull(),
   recipientAddress: text("recipientAddress"),
   deliveryType: mysqlEnum("deliveryType", ["pickup", "delivery"]).notNull(),
-  regionId: int("regionId"),
   deliveryDate: varchar("deliveryDate", { length: 10 }),
   timeslot: varchar("timeslot", { length: 32 }),
   flowerId: int("flowerId"),

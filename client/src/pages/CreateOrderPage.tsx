@@ -13,14 +13,12 @@ export default function CreateOrderPage() {
   const { staff } = useStaffAuth();
   const [, navigate] = useLocation();
   const { data: flowers = [] } = trpc.flowers.activeList.useQuery();
-  const { data: regions = [] } = trpc.regions.list.useQuery();
   const { data: folders = [] } = trpc.folders.list.useQuery();
 
   const [form, setForm] = useState({
     senderName: "", senderPhone: "", senderEmail: "", taxId: "",
     recipientName: "", recipientPhone: "", recipientAddress: "",
     deliveryType: "pickup" as "pickup" | "delivery",
-    regionId: undefined as number | undefined,
     deliveryDate: "", timeslot: "",
     flowerId: undefined as number | undefined,
     flowerName: "", flowerQuantity: "1", flowerUnit: "束",
@@ -43,9 +41,7 @@ export default function CreateOrderPage() {
       ? Number(selectedFlower.price || 0) * Number(form.flowerQuantity || 1)
       : Number(form.customFlowerPrice || 0);
     const cardP = form.needCard ? Number(form.cardPrice || 0) : 0;
-    const region = regions.find(r => r.id === form.regionId);
-    const deliveryP = form.deliveryType === "delivery" ? Number(region?.deliveryFee || 0) : 0;
-    return String(flowerP + cardP + deliveryP);
+    return String(flowerP + cardP);
   };
 
   const createMutation = trpc.orders.create.useMutation({
@@ -122,13 +118,7 @@ export default function CreateOrderPage() {
                 <label className={labelCls}>配送地址 *</label>
                 <input value={form.recipientAddress} onChange={e => setF("recipientAddress", e.target.value)} className={inputCls} placeholder="台北市信義區..." />
               </div>
-              <div>
-                <label className={labelCls}>配送區域</label>
-                <select value={form.regionId || ""} onChange={e => setF("regionId", e.target.value ? Number(e.target.value) : undefined)} className={inputCls}>
-                  <option value="">選擇區域</option>
-                  {regions.filter(r => r.isActive).map(r => <option key={r.id} value={r.id}>{r.name}（NT$ {r.deliveryFee}）</option>)}
-                </select>
-              </div>
+
             </div>
           )}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">

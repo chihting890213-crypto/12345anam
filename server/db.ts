@@ -1,11 +1,10 @@
-import { eq, desc, and, like, sql } from "drizzle-orm";
+import { eq, desc, and, like, sql, or } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
   InsertUser, users,
   staffAccounts, InsertStaffAccount,
   flowerFolders, InsertFlowerFolder,
   flowers, InsertFlower,
-  regions, InsertRegion,
   timeslotCapacities, InsertTimeslotCapacity,
   bankAccounts, InsertBankAccount,
   orders, InsertOrder,
@@ -171,53 +170,68 @@ export async function deleteFlower(id: number) {
   await db.delete(flowers).where(eq(flowers.id, id));
 }
 
-// ─── Regions ──────────────────────────────────────────────────────────────────
-export async function getAllRegions() {
-  const db = await getDb();
-  if (!db) return [];
-  return db.select().from(regions).orderBy(regions.area);
-}
-
-export async function createRegion(data: InsertRegion) {
-  const db = await getDb();
-  if (!db) throw new Error("DB not available");
-  await db.insert(regions).values(data);
-}
-
-export async function updateRegion(id: number, data: Partial<InsertRegion>) {
-  const db = await getDb();
-  if (!db) throw new Error("DB not available");
-  await db.update(regions).set(data).where(eq(regions.id, id));
-}
-
-export async function deleteRegion(id: number) {
-  const db = await getDb();
-  if (!db) throw new Error("DB not available");
-  await db.delete(regions).where(eq(regions.id, id));
-}
-
 // ─── Timeslot Capacities ──────────────────────────────────────────────────────
+// Helper: count active orders for a given date+timeslot+category combination
+async function countOrdersForSlot(dbInst: any, date: string, timeslot: string, category: string): Promise<number> {
+  const activeStatuses = ["pending", "confirmed", "awaiting_payment", "paid", "processing"];
+  let query = dbInst.select({ count: sql<number>`COUNT(*)` })
+    .from(orders)
+    .where(
+      and(
+        eq(orders.deliveryDate, date),
+        eq(orders.timeslot, timeslot),
+        sql`${orders.status} IN (${sql.raw(activeStatuses.map(s => `'${s}'`).join(","))})`
+      )
+    );
+  // If category is not 'all', also filter by category
+  if (category !== "all") {
+    query = dbInst.select({ count: sql<number>`COUNT(*)` })
+      .from(orders)
+      .where(
+        and(
+          eq(orders.deliveryDate, date),
+          eq(orders.timeslot, timeslot),
+          eq(orders.category, category as any),
+          sql`${orders.status} IN (${sql.raw(activeStatuses.map(s => `'${s}'`).join(","))})`
+        )
+      );
+  }
+  const result = await query;
+  return Number(result[0]?.count ?? 0);
+}
+
 export async function getCapacitiesByDate(date: string) {
   const db = await getDb();
   if (!db) return [];
-  return db.select().from(timeslotCapacities).where(eq(timeslotCapacities.date, date));
+  const caps = await db.select().from(timeslotCapacities).where(eq(timeslotCapacities.date, date));
+  // Dynamically compute currentCount from actual orders
+  return Promise.all(caps.map(async cap => ({
+    ...cap,
+    currentCount: await countOrdersForSlot(db, date, cap.timeslot, cap.category),
+  })));
 }
 
 export async function getCapacitiesByDateRange(startDate: string, endDate: string) {
   const db = await getDb();
   if (!db) return [];
-  return db.select().from(timeslotCapacities).where(
+  const caps = await db.select().from(timeslotCapacities).where(
     and(
       sql`${timeslotCapacities.date} >= ${startDate}`,
       sql`${timeslotCapacities.date} <= ${endDate}`
     )
   );
+  // Dynamically compute currentCount from actual orders
+  return Promise.all(caps.map(async cap => ({
+    ...cap,
+    currentCount: await countOrdersForSlot(db, cap.date, cap.timeslot, cap.category),
+  })));
 }
 
 export async function upsertCapacity(data: InsertTimeslotCapacity) {
   const db = await getDb();
   if (!db) throw new Error("DB not available");
-  await db.insert(timeslotCapacities).values(data).onDuplicateKeyUpdate({
+  // Only store maxCapacity; currentCount is computed dynamically
+  await db.insert(timeslotCapacities).values({ ...data, currentCount: 0 }).onDuplicateKeyUpdate({
     set: { maxCapacity: data.maxCapacity }
   });
 }

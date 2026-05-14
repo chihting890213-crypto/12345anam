@@ -219,30 +219,7 @@ export const appRouter = router({
       .mutation(async ({ input }) => { await db.deleteFlower(input.id); return { success: true }; }),
   }),
 
-  // Regions
-  regions: router({
-    list: publicProcedure.query(() => db.getAllRegions()),
-    create: staffProcedure
-      .input(z.object({
-        name: z.string().min(1),
-        area: z.enum(["north", "central", "south", "east"]),
-        deliveryFee: z.string().default("0"),
-        isActive: z.boolean().default(true),
-      }))
-      .mutation(async ({ input }) => { await db.createRegion(input as any); return { success: true }; }),
-    update: staffProcedure
-      .input(z.object({
-        id: z.number(),
-        name: z.string().optional(),
-        area: z.enum(["north", "central", "south", "east"]).optional(),
-        deliveryFee: z.string().optional(),
-        isActive: z.boolean().optional(),
-      }))
-      .mutation(async ({ input }) => { const { id, ...rest } = input; await db.updateRegion(id, rest as any); return { success: true }; }),
-    delete: staffProcedure
-      .input(z.object({ id: z.number() }))
-      .mutation(async ({ input }) => { await db.deleteRegion(input.id); return { success: true }; }),
-  }),
+
 
   // Timeslot Capacities
   capacities: router({
@@ -334,7 +311,6 @@ export const appRouter = router({
         recipientPhone: z.string().min(1),
         recipientAddress: z.string().optional(),
         deliveryType: z.enum(["pickup", "delivery"]),
-        regionId: z.number().optional(),
         deliveryDate: z.string().optional(),
         timeslot: z.string().optional(),
         flowerId: z.number().optional(),
@@ -384,7 +360,6 @@ export const appRouter = router({
         recipientPhone: z.string().optional(),
         recipientAddress: z.string().optional(),
         deliveryType: z.enum(["pickup", "delivery"]).optional(),
-        regionId: z.number().nullable().optional(),
         deliveryDate: z.string().optional(),
         timeslot: z.string().optional(),
         flowerId: z.number().nullable().optional(),
