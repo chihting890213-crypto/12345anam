@@ -29,8 +29,8 @@ export default function CreateOrderPage() {
   const { data: folders = [] } = trpc.folders.list.useQuery();
 
   const [form, setForm] = useState({
-    senderName: "", senderPhone: "", senderEmail: "", taxId: "",
-    recipientName: "", recipientPhone: "", recipientAddress: "",
+    orderingPersonName: "", orderingPersonPhone: "", orderingPersonEmail: "", taxId: "",
+    recipientPersonName: "", recipientPersonPhone: "", recipientPersonAddress: "",
     deliveryType: "pickup" as "pickup" | "delivery",
     deliveryDate: "", timeslot: "",
     flowerItems: [{ id: "1", flowerId: undefined as number | undefined, flowerName: "", quantity: 1, unit: "束", price: 0 }] as FlowerItem[],
@@ -92,9 +92,9 @@ export default function CreateOrderPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.senderName || !form.senderPhone) { toast.error("請填寫寄件人資訊"); return; }
-    if (!form.recipientName || !form.recipientPhone) { toast.error("請填寫收件人資訊"); return; }
-    if (form.deliveryType === "delivery" && !form.recipientAddress) { toast.error("外送需填寫地址"); return; }
+    if (!form.orderingPersonName || !form.orderingPersonPhone) { toast.error("請填寫訂花人資訊"); return; }
+    if (!form.recipientPersonName || !form.recipientPersonPhone) { toast.error("請填寫收花人資訊"); return; }
+    if (form.deliveryType === "delivery" && !form.recipientPersonAddress) { toast.error("外送需填寫地址"); return; }
     if (form.flowerItems.some(item => !item.flowerId && !item.flowerName)) { toast.error("請填寫所有花卉資訊"); return; }
     if (form.flowerItems.some(item => item.price <= 0)) { toast.error("花卉價格必須大於 0"); return; }
 
@@ -129,21 +129,21 @@ export default function CreateOrderPage() {
       <form onSubmit={handleSubmit} className="space-y-5">
         {/* Sender info */}
         <div className="memphis-card p-6 bg-[#B8F0D8]">
-          <h2 className="memphis-title text-lg mb-4">📤 寄件人資訊</h2>
+          <h2 className="memphis-title text-lg mb-4">📤 訂花人資訊</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div><label className={labelCls}>姓名 *</label><input value={form.senderName} onChange={e => setF("senderName", e.target.value)} className={inputCls} placeholder="寄件人姓名" /></div>
-            <div><label className={labelCls}>電話 *</label><input value={form.senderPhone} onChange={e => setF("senderPhone", e.target.value)} className={inputCls} placeholder="0912345678" /></div>
-            <div><label className={labelCls}>Email</label><input type="email" value={form.senderEmail} onChange={e => setF("senderEmail", e.target.value)} className={inputCls} placeholder="email@example.com" /></div>
+            <div><label className={labelCls}>姓名 *</label><input value={form.orderingPersonName} onChange={e => setF("orderingPersonName", e.target.value)} className={inputCls} placeholder="訂花人姓名" /></div>
+            <div><label className={labelCls}>電話 *</label><input value={form.orderingPersonPhone} onChange={e => setF("orderingPersonPhone", e.target.value)} className={inputCls} placeholder="0912345678" /></div>
+            <div><label className={labelCls}>Email</label><input type="email" value={form.orderingPersonEmail} onChange={e => setF("orderingPersonEmail", e.target.value)} className={inputCls} placeholder="email@example.com" /></div>
             <div><label className={labelCls}>統一編號</label><input value={form.taxId} onChange={e => setF("taxId", e.target.value)} className={inputCls} placeholder="12345678" /></div>
           </div>
         </div>
 
         {/* Recipient info */}
         <div className="memphis-card p-6 bg-[#D4C5F9]">
-          <h2 className="memphis-title text-lg mb-4">📥 收件人資訊</h2>
+          <h2 className="memphis-title text-lg mb-4">📥 收花人資訊</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div><label className={labelCls}>姓名 *</label><input value={form.recipientName} onChange={e => setF("recipientName", e.target.value)} className={inputCls} placeholder="收件人姓名" /></div>
-            <div><label className={labelCls}>電話 *</label><input value={form.recipientPhone} onChange={e => setF("recipientPhone", e.target.value)} className={inputCls} placeholder="0912345678" /></div>
+            <div><label className={labelCls}>姓名 *</label><input value={form.recipientPersonName} onChange={e => setF("recipientPersonName", e.target.value)} className={inputCls} placeholder="收花人姓名" /></div>
+            <div><label className={labelCls}>電話 *</label><input value={form.recipientPersonPhone} onChange={e => setF("recipientPersonPhone", e.target.value)} className={inputCls} placeholder="0912345678" /></div>
           </div>
         </div>
 
@@ -162,7 +162,7 @@ export default function CreateOrderPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className={labelCls}>配送地址 *</label>
-                <input value={form.recipientAddress} onChange={e => setF("recipientAddress", e.target.value)} className={inputCls} placeholder="台北市信義區..." />
+                <input value={form.recipientPersonAddress} onChange={e => setF("recipientPersonAddress", e.target.value)} className={inputCls} placeholder="台北市信義區..." />
               </div>
             </div>
           )}

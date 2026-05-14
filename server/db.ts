@@ -324,10 +324,10 @@ export async function updateOrder(id: number, data: Partial<InsertOrder>) {
   await db.update(orders).set(data).where(eq(orders.id, id));
 }
 
-export async function getOrderBySenderName(senderName: string) {
+export async function getOrderBySenderName(orderingPersonName: string) {
   const db = await getDb();
   if (!db) return undefined;
-  const result = await db.select().from(orders).where(eq(orders.senderName, senderName)).limit(1);
+  const result = await db.select().from(orders).where(eq(orders.orderingPersonName, orderingPersonName)).limit(1);
   return result.length > 0 ? result[0] : undefined;
 }
 

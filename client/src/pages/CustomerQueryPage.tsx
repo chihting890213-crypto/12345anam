@@ -23,7 +23,7 @@ export default function CustomerQueryPage() {
   const [orderNumber, setOrderNumber] = useState(urlOrderNumber);
   const [queriedNumber, setQueriedNumber] = useState(urlOrderNumber);
   const [msgContent, setMsgContent] = useState("");
-  const [senderName, setSenderName] = useState("");
+  const [orderingPersonName, setSenderName] = useState("");
 
   const { data: order, isLoading, error, refetch } = trpc.orders.byNumber.useQuery(
     { orderNumber: queriedNumber },
@@ -136,8 +136,8 @@ export default function CustomerQueryPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <InfoRow label="訂單編號" value={order.orderNumber} />
-                  <InfoRow label="寄件人" value={order.senderName} />
-                  <InfoRow label="收件人" value={order.recipientName} />
+                  <InfoRow label="訂花人" value={order.orderingPersonName} />
+                  <InfoRow label="收花人" value={order.recipientPersonName} />
                   <InfoRow label="配送方式" value={order.deliveryType === "pickup" ? "自取" : "外送"} />
                 </div>
                 <div className="space-y-1">
@@ -188,7 +188,7 @@ export default function CustomerQueryPage() {
                   <div key={msg.id} className={`flex ${msg.senderType === "customer" ? "justify-end" : "justify-start"}`}>
                     <div className={`max-w-[75%] rounded-xl px-4 py-3 border-[2px] border-black ${msg.senderType === "customer" ? "bg-[#FF7B6B] text-white" : "bg-[#B8F0D8] text-black"}`}>
                       <div className="text-xs font-black uppercase mb-1 opacity-70">
-                        {msg.senderType === "staff" ? "👩‍💼 員工" : "👤 您"} · {msg.senderName}
+                        {msg.senderType === "staff" ? "👩‍💼 員工" : "👤 您"} · {msg.orderingPersonName}
                       </div>
                       <div className="font-bold text-sm">{msg.content}</div>
                       <div className="text-xs opacity-60 mt-1">{msg.createdAt ? new Date(msg.createdAt).toLocaleString("zh-TW") : ""}</div>
@@ -198,7 +198,7 @@ export default function CustomerQueryPage() {
               </div>
               <div className="p-4 border-t-[2px] border-black bg-[#FFF0A0]">
                 <div className="flex gap-2 mb-2">
-                  <input value={senderName} onChange={e => setSenderName(e.target.value)}
+                  <input value={orderingPersonName} onChange={e => setSenderName(e.target.value)}
                     className="flex-1 px-3 py-2 bg-white border-[2px] border-black rounded-lg font-bold text-sm"
                     placeholder="您的姓名（選填）" />
                 </div>
@@ -209,7 +209,7 @@ export default function CustomerQueryPage() {
                   <button
                     onClick={() => {
                       if (!msgContent.trim()) return;
-                      sendMsg.mutate({ orderNumber: queriedNumber, content: msgContent, senderName: senderName || undefined });
+                      sendMsg.mutate({ orderNumber: queriedNumber, content: msgContent, orderingPersonName: orderingPersonName || undefined });
                     }}
                     disabled={sendMsg.isPending || !msgContent.trim()}
                     className="memphis-btn px-5 py-2 bg-[#FF7B6B] text-white font-black uppercase rounded-lg self-end">

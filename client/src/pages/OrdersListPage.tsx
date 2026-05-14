@@ -97,7 +97,7 @@ export default function OrdersListPage() {
             <table className="w-full">
               <thead>
                 <tr className="border-b-[2px] border-black bg-[#FFD6C0]">
-                  {["訂單編號","寄件人","收件人","配送方式","配送日期","金額","狀態","操作"].map(h => (
+                  {["訂單編號","訂花人","收花人","配送方式","配送日期","金額","狀態","操作"].map(h => (
                     <th key={h} className="px-4 py-3 text-left text-xs font-black uppercase tracking-wide">{h}</th>
                   ))}
                 </tr>
@@ -111,12 +111,12 @@ export default function OrdersListPage() {
                         <span className="font-black text-sm text-[#FF7B6B]">{order.orderNumber}</span>
                       </td>
                       <td className="px-4 py-3">
-                        <div className="font-bold text-sm">{order.senderName}</div>
-                        <div className="text-xs text-gray-500">{order.senderPhone}</div>
+                        <div className="font-bold text-sm">{order.orderingPersonName}</div>
+                        <div className="text-xs text-gray-500">{order.orderingPersonPhone}</div>
                       </td>
                       <td className="px-4 py-3">
-                        <div className="font-bold text-sm">{order.recipientName}</div>
-                        <div className="text-xs text-gray-500">{order.recipientPhone}</div>
+                        <div className="font-bold text-sm">{order.recipientPersonName}</div>
+                        <div className="text-xs text-gray-500">{order.recipientPersonPhone}</div>
                       </td>
                       <td className="px-4 py-3">
                         <span className={`memphis-badge ${order.deliveryType === "pickup" ? "status-confirmed" : "status-awaiting"}`}>

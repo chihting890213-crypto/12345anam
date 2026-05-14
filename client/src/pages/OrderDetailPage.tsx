@@ -221,22 +221,22 @@ export default function OrderDetailPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         {/* Sender */}
         <div className="memphis-card p-5 bg-[#B8F0D8]">
-          <h2 className="memphis-title text-base mb-3">📤 寄件人</h2>
+          <h2 className="memphis-title text-base mb-3">📤 訂花人</h2>
           <div className="space-y-2">
-            <InfoRow label="姓名" value={order.senderName} />
-            <InfoRow label="電話" value={order.senderPhone} />
-            <InfoRow label="Email" value={order.senderEmail} />
+            <InfoRow label="姓名" value={order.orderingPersonName} />
+            <InfoRow label="電話" value={order.orderingPersonPhone} />
+            <InfoRow label="Email" value={order.orderingPersonEmail} />
             <InfoRow label="統編" value={order.taxId} />
           </div>
         </div>
 
         {/* Recipient */}
         <div className="memphis-card p-5 bg-[#D4C5F9]">
-          <h2 className="memphis-title text-base mb-3">📥 收件人</h2>
+          <h2 className="memphis-title text-base mb-3">📥 收花人</h2>
           <div className="space-y-2">
-            <InfoRow label="姓名" value={order.recipientName} />
-            <InfoRow label="電話" value={order.recipientPhone} />
-            <InfoRow label="地址" value={order.recipientAddress} />
+            <InfoRow label="姓名" value={order.recipientPersonName} />
+            <InfoRow label="電話" value={order.recipientPersonPhone} />
+            <InfoRow label="地址" value={order.recipientPersonAddress} />
             <InfoRow label="配送方式" value={order.deliveryType === "pickup" ? "自取" : "外送"} />
             <InfoRow label="配送日期" value={order.deliveryDate} />
             <InfoRow label="時段" value={order.timeslot} />
@@ -293,9 +293,9 @@ export default function OrderDetailPage() {
           <h2 className="memphis-title text-lg mb-4">✏️ 編輯訂單</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {[
-              { label: "寄件人姓名", field: "senderName" }, { label: "寄件人電話", field: "senderPhone" },
-              { label: "收件人姓名", field: "recipientName" }, { label: "收件人電話", field: "recipientPhone" },
-              { label: "收件人地址", field: "recipientAddress" }, { label: "統一編號", field: "taxId" },
+              { label: "訂花人姓名", field: "orderingPersonName" }, { label: "訂花人電話", field: "orderingPersonPhone" },
+              { label: "收花人姓名", field: "recipientPersonName" }, { label: "收花人電話", field: "recipientPersonPhone" },
+              { label: "收花人地址", field: "recipientPersonAddress" }, { label: "統一編號", field: "taxId" },
               { label: "配送日期", field: "deliveryDate", type: "date" }, { label: "時段", field: "timeslot" },
               { label: "花卉名稱", field: "flowerName" }, { label: "數量", field: "flowerQuantity" },
               { label: "單位", field: "flowerUnit" }, { label: "花卉價格", field: "flowerPrice", type: "number" },
@@ -343,7 +343,7 @@ export default function OrderDetailPage() {
           ) : messages.map(msg => (
             <div key={msg.id} className={`flex ${msg.senderType === "staff" ? "justify-end" : "justify-start"}`}>
               <div className={`max-w-[70%] rounded-xl px-4 py-3 border-[2px] border-black ${msg.senderType === "staff" ? "bg-[#FF7B6B] text-white" : "bg-[#B8F0D8] text-black"}`}>
-                <div className="text-xs font-black uppercase mb-1 opacity-70">{msg.senderName} · {msg.senderType === "staff" ? "員工" : "客戶"}</div>
+                <div className="text-xs font-black uppercase mb-1 opacity-70">{msg.orderingPersonName} · {msg.senderType === "staff" ? "員工" : "客戶"}</div>
                 <div className="font-bold text-sm">{msg.content}</div>
                 <div className="text-xs opacity-60 mt-1">{msg.createdAt ? new Date(msg.createdAt).toLocaleString("zh-TW") : ""}</div>
               </div>

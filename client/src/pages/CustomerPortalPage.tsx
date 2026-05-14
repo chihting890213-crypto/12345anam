@@ -23,13 +23,13 @@ export default function CustomerPortalPage() {
   const [orderNumber, setOrderNumber] = useState("");
   const [queriedNumber, setQueriedNumber] = useState("");
   const [msgContent, setMsgContent] = useState("");
-  const [senderName, setSenderName] = useState("");
+  const [orderingPersonName, setSenderName] = useState("");
 
   // Create order tab state
-  const [senderInfo, setSenderInfo] = useState({ name: "", phone: "", address: "" });
+  const [orderingPersonInfo, setSenderInfo] = useState({ name: "", phone: "", address: "" });
   const [showOrderSuccess, setShowOrderSuccess] = useState(false);
   const [createdOrderNumber, setCreatedOrderNumber] = useState("");
-    const [recipientInfo, setRecipientInfo] = useState({ name: "", phone: "", address: "" });
+    const [recipientPersonInfo, setRecipientInfo] = useState({ name: "", phone: "", address: "" });
   const [flowerItems, setFlowerItems] = useState<Array<{ flowerId: string; quantity: number; unit: string }>>([
     { flowerId: "", quantity: 1, unit: "束" }
   ]);
@@ -92,7 +92,7 @@ export default function CustomerPortalPage() {
   const handleQuery = (e: React.FormEvent) => {
     e.preventDefault();
     if (!orderNumber.trim()) {
-      toast.error("請輸入訂單編號或寄件人名字");
+      toast.error("請輸入訂單編號或訂花人名字");
       return;
     }
     setQueriedNumber(orderNumber.trim());
@@ -105,12 +105,12 @@ export default function CustomerPortalPage() {
 
   const handleCreateOrder = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!senderInfo.name || !senderInfo.phone) {
-      toast.error("請填寫寄件人資訊");
+    if (!orderingPersonInfo.name || !orderingPersonInfo.phone) {
+      toast.error("請填寫訂花人資訊");
       return;
     }
-    if (!recipientInfo.name || !recipientInfo.phone) {
-      toast.error("請填寫收件人資訊");
+    if (!recipientPersonInfo.name || !recipientPersonInfo.phone) {
+      toast.error("請填寫收花人資訊");
       return;
     }
     if (!orderDetails.deliveryDate) {
@@ -128,13 +128,13 @@ export default function CustomerPortalPage() {
     const paymentNote = orderDetails.paymentMethod === "no-payment" ? "免付款（店內結清）" : "";
 
     createOrder.mutate({
-      senderName: senderInfo.name,
-      senderPhone: senderInfo.phone,
-      senderEmail: "",
-      senderAddress: senderInfo.address,
-      recipientName: recipientInfo.name,
-      recipientPhone: recipientInfo.phone,
-      recipientAddress: recipientInfo.address,
+      orderingPersonName: orderingPersonInfo.name,
+      orderingPersonPhone: orderingPersonInfo.phone,
+      orderingPersonEmail: "",
+      orderingPersonAddress: orderingPersonInfo.address,
+      recipientPersonName: recipientPersonInfo.name,
+      recipientPersonPhone: recipientPersonInfo.phone,
+      recipientPersonAddress: recipientPersonInfo.address,
       deliveryType: orderDetails.deliveryType,
       deliveryDate: orderDetails.deliveryDate,
       timeslot: orderDetails.timeslot,
@@ -211,24 +211,24 @@ export default function CustomerPortalPage() {
           <form onSubmit={handleCreateOrder} className="space-y-6">
             {/* Sender Info */}
             <div className="memphis-card p-6 bg-[#B8F0D8]">
-              <h2 className="font-black text-lg uppercase mb-4">寄件人資訊</h2>
+              <h2 className="font-black text-lg uppercase mb-4">訂花人資訊</h2>
               <div className="space-y-3">
                 <input
                   type="text"
-                  value={senderInfo.name}
+                  value={orderingPersonInfo.name}
                   onChange={(e) => setSenderInfo((s) => ({ ...s, name: e.target.value }))}
                   placeholder="姓名"
                   className="w-full px-4 py-3 bg-white border-[2px] border-black rounded-lg font-bold"
                 />
                 <input
                   type="tel"
-                  value={senderInfo.phone}
+                  value={orderingPersonInfo.phone}
                   onChange={(e) => setSenderInfo((s) => ({ ...s, phone: e.target.value }))}
                   placeholder="電話"
                   className="w-full px-4 py-3 bg-white border-[2px] border-black rounded-lg font-bold"
                 />
                 <textarea
-                  value={senderInfo.address}
+                  value={orderingPersonInfo.address}
                   onChange={(e) => setSenderInfo((s) => ({ ...s, address: e.target.value }))}
                   placeholder="地址（選填）"
                   rows={2}
@@ -239,24 +239,24 @@ export default function CustomerPortalPage() {
 
             {/* Recipient Info */}
             <div className="memphis-card p-6 bg-[#D4C5F9]">
-              <h2 className="font-black text-lg uppercase mb-4">收件人資訊</h2>
+              <h2 className="font-black text-lg uppercase mb-4">收花人資訊</h2>
               <div className="space-y-3">
                 <input
                   type="text"
-                  value={recipientInfo.name}
+                  value={recipientPersonInfo.name}
                   onChange={(e) => setRecipientInfo((r) => ({ ...r, name: e.target.value }))}
                   placeholder="姓名"
                   className="w-full px-4 py-3 bg-white border-[2px] border-black rounded-lg font-bold"
                 />
                 <input
                   type="tel"
-                  value={recipientInfo.phone}
+                  value={recipientPersonInfo.phone}
                   onChange={(e) => setRecipientInfo((r) => ({ ...r, phone: e.target.value }))}
                   placeholder="電話"
                   className="w-full px-4 py-3 bg-white border-[2px] border-black rounded-lg font-bold"
                 />
                 <textarea
-                  value={recipientInfo.address}
+                  value={recipientPersonInfo.address}
                   onChange={(e) => setRecipientInfo((r) => ({ ...r, address: e.target.value }))}
                   placeholder="配送地址"
                   rows={2}
@@ -550,7 +550,7 @@ export default function CustomerPortalPage() {
                 <input
                   value={orderNumber}
                   onChange={(e) => setOrderNumber(e.target.value)}
-                  placeholder="例：訂單編號或寄件人名字"
+                  placeholder="例：訂單編號或訂花人名字"
                   className="flex-1 px-4 py-3 bg-white border-[2px] border-black rounded-lg font-bold text-base focus:outline-none focus:shadow-[3px_3px_0px_#111] transition-shadow"
                 />
                 <button
@@ -595,8 +595,8 @@ export default function CustomerPortalPage() {
                   <h3 className="font-black text-lg mb-3 uppercase">訂單資訊</h3>
                   <div className="space-y-1">
                     <InfoRow label="訂單編號" value={order.orderNumber} />
-                    <InfoRow label="寄件人" value={order.senderName} />
-                    <InfoRow label="收件人" value={order.recipientName} />
+                    <InfoRow label="訂花人" value={order.orderingPersonName} />
+                    <InfoRow label="收花人" value={order.recipientPersonName} />
                     <InfoRow label="配送日期" value={order.deliveryDate} />
                     <InfoRow label="時段" value={order.timeslot} />
                     <InfoRow label="花卉" value={order.flowerName} />
@@ -665,14 +665,14 @@ export default function CustomerPortalPage() {
                         sendMsg.mutate({
                           orderNumber: queriedNumber,
                           content: msgContent,
-                          senderName: senderName || "客戶",
+                          orderingPersonName: orderingPersonName || "客戶",
                         });
                       }}
                       className="flex gap-2"
                     >
                       <input
                         type="text"
-                        value={senderName}
+                        value={orderingPersonName}
                         onChange={(e) => setSenderName(e.target.value)}
                         placeholder="您的名字（選填）"
                         className="px-3 py-2 bg-white border-[2px] border-black rounded-lg font-bold text-sm w-32"

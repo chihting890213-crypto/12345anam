@@ -322,13 +322,13 @@ export const appRouter = router({
 
     create: publicProcedure
       .input(z.object({
-        senderName: z.string().min(1),
-        senderPhone: z.string().min(1),
-        senderEmail: z.string().optional(),
+        orderingPersonName: z.string().min(1),
+        orderingPersonPhone: z.string().min(1),
+        orderingPersonEmail: z.string().optional(),
         taxId: z.string().optional(),
-        recipientName: z.string().min(1),
-        recipientPhone: z.string().min(1),
-        recipientAddress: z.string().optional(),
+        recipientPersonName: z.string().min(1),
+        recipientPersonPhone: z.string().min(1),
+        recipientPersonAddress: z.string().optional(),
         deliveryType: z.enum(["pickup", "delivery"]),
         deliveryDate: z.string().optional(),
         timeslot: z.string().optional(),
@@ -371,13 +371,13 @@ export const appRouter = router({
     update: staffProcedure
       .input(z.object({
         id: z.number(),
-        senderName: z.string().optional(),
-        senderPhone: z.string().optional(),
-        senderEmail: z.string().optional(),
+        orderingPersonName: z.string().optional(),
+        orderingPersonPhone: z.string().optional(),
+        orderingPersonEmail: z.string().optional(),
         taxId: z.string().optional(),
-        recipientName: z.string().optional(),
-        recipientPhone: z.string().optional(),
-        recipientAddress: z.string().optional(),
+        recipientPersonName: z.string().optional(),
+        recipientPersonPhone: z.string().optional(),
+        recipientPersonAddress: z.string().optional(),
         deliveryType: z.enum(["pickup", "delivery"]).optional(),
         deliveryDate: z.string().optional(),
         timeslot: z.string().optional(),
@@ -446,21 +446,21 @@ export const appRouter = router({
         await db.createMessage({
           orderId: input.orderId,
           senderType: "staff",
-          senderName: (ctx as any).staff.displayName || (ctx as any).staff.username,
+          orderingPersonName: (ctx as any).staff.displayName || (ctx as any).staff.username,
           content: input.content,
         });
         return { success: true };
       }),
 
     sendCustomer: publicProcedure
-      .input(z.object({ orderNumber: z.string(), content: z.string().min(1), senderName: z.string().optional() }))
+      .input(z.object({ orderNumber: z.string(), content: z.string().min(1), orderingPersonName: z.string().optional() }))
       .mutation(async ({ input }) => {
         const order = await db.getOrderByNumber(input.orderNumber);
         if (!order) throw new TRPCError({ code: "NOT_FOUND" });
         await db.createMessage({
           orderId: order.id,
           senderType: "customer",
-          senderName: input.senderName || order.senderName,
+          orderingPersonName: input.orderingPersonName || order.orderingPersonName,
           content: input.content,
         });
         return { success: true };
