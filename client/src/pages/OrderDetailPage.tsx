@@ -15,7 +15,14 @@ const statusMap: Record<string, { label: string; cls: string }> = {
   fully_booked:     { label: "已額滿",   cls: "status-booked" },
 };
 
-const statusFlow = ["pending","confirmed","awaiting_payment","paid","processing","completed"];
+// Determine status flow based on payment method
+const getStatusFlow = (paymentNote?: string | null) => {
+  const hasNoPayment = paymentNote?.includes("免付款") || paymentNote?.includes("店內結清");
+  if (hasNoPayment) {
+    return ["pending", "confirmed", "processing", "completed"];
+  }
+  return ["pending", "confirmed", "awaiting_payment", "paid", "processing", "completed"];
+};
 
 export default function OrderDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -32,7 +39,7 @@ export default function OrderDetailPage() {
   const [editMode, setEditMode] = useState(false);
   const [editForm, setEditForm] = useState<any>({});
   const [statusNote, setStatusNote] = useState("");
-  const [selectedBankId, setSelectedBankId] = useState<number | undefined>();
+  const [selectedBankId, setSelectedBankId] = useState<string>("");
 
   const updateStatus = trpc.orders.updateStatus.useMutation({
     onSuccess: () => { toast.success("狀態已更新"); utils.orders.detail.invalidate({ id: orderId }); },
@@ -51,12 +58,37 @@ export default function OrderDetailPage() {
   if (!order) return <div className="p-8 text-center font-bold text-gray-400 text-xl">找不到此訂單</div>;
 
   const s = statusMap[order.status] || { label: order.status, cls: "" };
+  const currentFlow = getStatusFlow(order.paymentNote);
+  const currentStatusIndex = currentFlow.indexOf(order.status);
+  const canAdvance = currentStatusIndex >= 0 && currentStatusIndex < currentFlow.length - 1;
+  const nextStatus = canAdvance ? currentFlow[currentStatusIndex + 1] : null;
 
   const handleStatusChange = (newStatus: string) => {
+    // Only allow advancing to next status in the flow, or cancellation
+    if (newStatus !== "cancelled" && newStatus !== nextStatus) {
+      toast.error("只能按順序進行狀態更新");
+      return;
+    }
     const payload: any = { id: orderId, status: newStatus as any };
-    if (newStatus === "awaiting_payment" && selectedBankId) payload.bankAccountId = selectedBankId;
+    if (newStatus === "awaiting_payment" && selectedBankId && selectedBankId !== "no-payment") {
+      payload.bankAccountId = Number(selectedBankId);
+    }
     if (statusNote) payload.paymentNote = statusNote;
     updateStatus.mutate(payload);
+  };
+
+  const handleConfirmPaymentMethod = () => {
+    if (!selectedBankId) {
+      toast.error("請選擇付款方式");
+      return;
+    }
+    if (selectedBankId === "no-payment") {
+      // Skip payment steps, go directly to processing
+      handleStatusChange("processing");
+    } else {
+      // Normal payment flow
+      handleStatusChange("awaiting_payment");
+    }
   };
 
   const InfoRow = ({ label, value }: { label: string; value?: string | null }) => (
@@ -92,12 +124,16 @@ export default function OrderDetailPage() {
       <div className="memphis-card p-5 bg-[#FFD6C0]">
         <h2 className="memphis-title text-base mb-4">訂單狀態管理</h2>
         <div className="flex flex-wrap gap-2 mb-4">
-          {statusFlow.map((st, i) => {
+          {currentFlow.map((st, i) => {
             const sm = statusMap[st];
             const isCurrent = order.status === st;
+            const isNext = st === nextStatus;
+            const isClickable = isCurrent || isNext;
             return (
-              <button key={st} onClick={() => handleStatusChange(st)} disabled={updateStatus.isPending}
-                className={`memphis-btn px-3 py-1.5 font-black text-xs uppercase rounded-lg ${isCurrent ? "bg-[#111] text-white" : "bg-white text-black"}`}>
+              <button key={st} onClick={() => handleStatusChange(st)} disabled={!isClickable || updateStatus.isPending}
+                className={`memphis-btn px-3 py-1.5 font-black text-xs uppercase rounded-lg ${
+                  isCurrent ? "bg-[#111] text-white" : isClickable ? "bg-[#B8F0D8] text-black" : "bg-gray-200 text-gray-400 cursor-not-allowed"
+                }`}>
                 {i + 1}. {sm.label}
               </button>
             );
@@ -122,22 +158,59 @@ export default function OrderDetailPage() {
           </div>
         )}
 
-        {/* Payment info when moving to awaiting_payment */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <div>
-            <label className="block text-xs font-black uppercase mb-1">付款帳號（確認付款時顯示給客戶）</label>
-            <select value={selectedBankId || ""} onChange={e => setSelectedBankId(e.target.value ? Number(e.target.value) : undefined)}
-              className="w-full px-3 py-2 bg-white border-[2px] border-black rounded-lg font-bold text-sm">
-              <option value="">選擇付款帳號</option>
-              {bankAccounts.filter(b => b.isActive).map(b => <option key={b.id} value={b.id}>{b.bankName} - {b.accountNumber}</option>)}
-            </select>
+        {/* Payment method selection - only show when confirmed and not yet decided */}
+        {order.status === "confirmed" && !order.paymentNote && (
+          <div className="grid grid-cols-1 gap-3 mb-4 p-4 bg-white border-[2px] border-black rounded-lg">
+            <div>
+              <label className="block text-xs font-black uppercase mb-2">選擇付款方式</label>
+              <select value={selectedBankId} onChange={e => setSelectedBankId(e.target.value)}
+                className="w-full px-3 py-2 bg-white border-[2px] border-black rounded-lg font-bold text-sm">
+                <option value="">-- 選擇付款方式 --</option>
+                {bankAccounts.filter(b => b.isActive).map(b => (
+                  <option key={b.id} value={String(b.id)}>{b.bankName} {b.accountNumber}</option>
+                ))}
+                <option value="no-payment">免付款（店內結清）</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-black uppercase mb-2">付款備註（選填）</label>
+              <input type="text" value={statusNote} onChange={e => setStatusNote(e.target.value)}
+                placeholder="如：免付款、店內結清等"
+                className="w-full px-3 py-2 bg-white border-[2px] border-black rounded-lg font-bold text-sm" />
+            </div>
+            <button onClick={handleConfirmPaymentMethod} disabled={updateStatus.isPending || !selectedBankId}
+              className="memphis-btn px-4 py-2 bg-[#FF7B6B] text-white font-black uppercase rounded-lg">
+              {updateStatus.isPending ? "處理中..." : "確認付款方式"}
+            </button>
           </div>
-          <div>
-            <label className="block text-xs font-black uppercase mb-1">付款備註</label>
-            <input value={statusNote} onChange={e => setStatusNote(e.target.value)}
-              className="w-full px-3 py-2 bg-white border-[2px] border-black rounded-lg font-bold text-sm" placeholder="付款說明..." />
+        )}
+
+        {/* Payment info when in awaiting_payment status */}
+        {order.status === "awaiting_payment" && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4 p-4 bg-white border-[2px] border-black rounded-lg">
+            <div>
+              <label className="block text-xs font-black uppercase mb-1">付款帳號</label>
+              <select value={order.bankAccountId || ""} onChange={e => {
+                if (e.target.value) {
+                  updateOrder.mutate({ id: orderId, bankAccountId: Number(e.target.value) });
+                }
+              }}
+                className="w-full px-3 py-2 bg-white border-[2px] border-black rounded-lg font-bold text-sm">
+                <option value="">-- 選擇帳號 --</option>
+                {bankAccounts.filter(b => b.isActive).map(b => (
+                  <option key={b.id} value={b.id}>{b.bankName} {b.accountNumber}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-black uppercase mb-1">付款備註</label>
+              <input type="text" value={order.paymentNote || ""} onChange={e => {
+                updateOrder.mutate({ id: orderId, paymentNote: e.target.value });
+              }}
+                className="w-full px-3 py-2 bg-white border-[2px] border-black rounded-lg font-bold text-sm" />
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Order details */}
@@ -173,7 +246,12 @@ export default function OrderDetailPage() {
             <InfoRow label="款式" value={order.flowerName} />
             <InfoRow label="數量" value={`${order.flowerQuantity} ${order.flowerUnit}`} />
             <InfoRow label="單價" value={order.flowerPrice ? `NT$ ${order.flowerPrice}` : undefined} />
-            <InfoRow label="類別" value={order.category === "holiday" ? "節慶花卉配送" : `其他${order.categoryNote ? `：${order.categoryNote}` : ""}`} />
+            <InfoRow label="類別" value={
+              order.category === "holiday" ? "節慶花卉配送" :
+              order.category === "wedding" ? "婚禮" :
+              order.category === "funeral" ? "喪禮" :
+              `其他${order.categoryNote ? `：${order.categoryNote}` : ""}`
+            } />
           </div>
         </div>
 

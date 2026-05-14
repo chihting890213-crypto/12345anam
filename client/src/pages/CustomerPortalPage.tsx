@@ -32,7 +32,7 @@ export default function CustomerPortalPage() {
     deliveryType: "delivery" as "pickup" | "delivery",
     deliveryDate: "",
     timeslot: "09:00-12:00",
-    category: "other" as "holiday" | "other",
+    category: "other" as "holiday" | "wedding" | "funeral" | "other",
     flowerId: "",
     quantity: 1,
     quantityUnit: "束",
@@ -316,6 +316,8 @@ export default function CustomerPortalPage() {
                     className="w-full px-4 py-3 bg-white border-[2px] border-black rounded-lg font-bold"
                   >
                     <option value="holiday">節慶花卉配送</option>
+                    <option value="wedding">婚禮</option>
+                    <option value="funeral">喪禮</option>
                     <option value="other">其他</option>
                   </select>
                 </div>
@@ -482,19 +484,30 @@ export default function CustomerPortalPage() {
                 </div>
 
                 {/* Payment Info (only if confirmed) */}
-                {(order.status === "awaiting_payment" || order.status === "paid" || order.status === "processing" || order.status === "completed") && bankAccounts.length > 0 && (
+                {(order.status === "awaiting_payment" || order.status === "paid" || order.status === "processing" || order.status === "completed") && (
                   <div className="memphis-card p-5 bg-[#FFF0A0]">
                     <h3 className="font-black text-lg mb-3 uppercase">💳 付款資訊</h3>
-                    <div className="space-y-3">
-                      {bankAccounts.map((acc) => (
-                        <div key={acc.id} className="p-3 bg-white border-[2px] border-black rounded-lg">
-                          <div className="font-black">{acc.bankName}</div>
-                          <div className="text-sm font-bold text-black/60">{acc.accountName}</div>
-                          <div className="font-mono font-bold mt-1">{acc.accountNumber}</div>
-                          {acc.branchName && <div className="text-xs font-bold text-black/50">{acc.branchName}</div>}
-                        </div>
-                      ))}
-                    </div>
+                    {order.paymentNote?.includes("免付款") || order.paymentNote?.includes("店內結清") ? (
+                      <div className="p-4 bg-white border-[2px] border-black rounded-lg text-center">
+                        <div className="font-black text-lg text-[#FF7B6B]">✓ 免付款（店內結清）</div>
+                        <div className="text-sm font-bold text-black/60 mt-2">{order.paymentNote}</div>
+                      </div>
+                    ) : bankAccounts.length > 0 ? (
+                      <div className="space-y-3">
+                        {bankAccounts.map((acc) => (
+                          <div key={acc.id} className="p-3 bg-white border-[2px] border-black rounded-lg">
+                            <div className="font-black">{acc.bankName}</div>
+                            <div className="text-sm font-bold text-black/60">{acc.accountName}</div>
+                            <div className="font-mono font-bold mt-1">{acc.accountNumber}</div>
+                            {acc.branchName && <div className="text-xs font-bold text-black/50">{acc.branchName}</div>}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="p-3 bg-white border-[2px] border-black rounded-lg text-center text-gray-500 font-bold">
+                        尚無付款資訊
+                      </div>
+                    )}
                   </div>
                 )}
 

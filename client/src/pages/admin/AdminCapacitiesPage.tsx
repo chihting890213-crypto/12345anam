@@ -2,14 +2,14 @@ import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 
-const categoryLabels = { all: "全部", holiday: "節慶花卉配送", other: "其他" };
+const categoryLabels = { all: "全部", holiday: "節慶花卉配送", wedding: "婚禮", funeral: "喪禮", other: "其他" };
 
 export default function AdminCapacitiesPage() {
   const utils = trpc.useUtils();
   const today = new Date().toISOString().split("T")[0];
   const [selectedDate, setSelectedDate] = useState(today);
   const { data: caps = [], isLoading } = trpc.capacities.byDate.useQuery({ date: selectedDate });
-  const [form, setForm] = useState({ timeslot: "09:00-12:00", category: "all" as "all"|"holiday"|"other", maxCapacity: 10 });
+  const [form, setForm] = useState({ timeslot: "09:00-12:00", category: "all" as "all"|"holiday"|"wedding"|"funeral"|"other", maxCapacity: 10 });
 
   const upsert = trpc.capacities.upsert.useMutation({
     onSuccess: () => { toast.success("已設定容量"); utils.capacities.byDate.invalidate({ date: selectedDate }); },

@@ -8,7 +8,7 @@ type FlowerForm = {
   description: string;
   price?: string;
   unit: string;
-  category: "holiday" | "other";
+  category: "holiday" | "wedding" | "funeral" | "other";
   isCustom: boolean;
   isActive: boolean;
 };
@@ -369,7 +369,7 @@ export default function AdminFlowersPage() {
                             price: e.target.value || undefined,
                           }))
                         }
-                        placeholder="留空則無預設價格"
+                        placeholder="例：500"
                         className="w-full px-4 py-3 bg-white border-[2px] border-black rounded-lg font-bold"
                       />
                       </div>
@@ -407,28 +407,13 @@ export default function AdminFlowersPage() {
                         className="w-full px-4 py-3 bg-white border-[2px] border-black rounded-lg font-bold"
                       >
                         <option value="holiday">節慶花卉配送</option>
+                        <option value="wedding">婚禮</option>
+                        <option value="funeral">喪禮</option>
                         <option value="other">其他</option>
                       </select>
                     </div>
 
-                    <div className="flex items-center gap-3">
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={flowerForm.isCustom}
-                          onChange={(e) =>
-                            setFlowerForm((f) => ({
-                              ...f,
-                              isCustom: e.target.checked,
-                            }))
-                          }
-                          className="w-4 h-4"
-                        />
-                        <span className="font-bold text-sm">
-                          自訂花卉（客戶可自填價格）
-                        </span>
-                      </label>
-                    </div>
+
 
                     <div className="flex gap-3">
                       <button
