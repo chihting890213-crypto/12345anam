@@ -26,7 +26,7 @@ export default function CustomerPortalPage() {
   const [orderingPersonName, setSenderName] = useState("");
 
   // Create order tab state
-  const [orderingPersonInfo, setSenderInfo] = useState({ name: "", phone: "", address: "" });
+  const [orderingPersonInfo, setSenderInfo] = useState({ name: "", phone: "" });
   const [showOrderSuccess, setShowOrderSuccess] = useState(false);
   const [createdOrderNumber, setCreatedOrderNumber] = useState("");
     const [recipientPersonInfo, setRecipientInfo] = useState({ name: "", phone: "", address: "" });
@@ -82,7 +82,7 @@ export default function CustomerPortalPage() {
         paymentMethod: "bank",
         selectedBankId: "",
       });
-      setSenderInfo({ name: "", phone: "", address: "" });
+      setSenderInfo({ name: "", phone: "" });
       setRecipientInfo({ name: "", phone: "", address: "" });
       setFlowerItems([{ flowerId: "", quantity: 1, unit: "束" }]);
     },
@@ -131,7 +131,7 @@ export default function CustomerPortalPage() {
       orderingPersonName: orderingPersonInfo.name,
       orderingPersonPhone: orderingPersonInfo.phone,
       orderingPersonEmail: "",
-      orderingPersonAddress: orderingPersonInfo.address,
+      
       recipientPersonName: recipientPersonInfo.name,
       recipientPersonPhone: recipientPersonInfo.phone,
       recipientPersonAddress: recipientPersonInfo.address,
