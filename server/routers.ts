@@ -220,10 +220,15 @@ export const appRouter = router({
 
 
   // Timeslot Capacities
+  // Capacities (Timeslot capacity per flower)
   capacities: router({
     byDate: publicProcedure
       .input(z.object({ date: z.string() }))
       .query(({ input }) => db.getCapacitiesByDate(input.date)),
+    // Get capacity for a specific flower on a specific date/timeslot
+    check: publicProcedure
+      .input(z.object({ date: z.string(), timeslot: z.string(), flowerId: z.number() }))
+      .query(({ input }) => db.getCapacity(input.date, input.timeslot, input.flowerId)),
     byDateRange: staffProcedure
       .input(z.object({ startDate: z.string(), endDate: z.string() }))
       .query(({ input }) => db.getCapacitiesByDateRange(input.startDate, input.endDate)),
@@ -231,7 +236,7 @@ export const appRouter = router({
       .input(z.object({
         date: z.string(),
         timeslot: z.string(),
-        category: z.enum(["holiday", "wedding", "funeral", "other", "all"]).default("all"),
+        flowerId: z.number(),
         maxCapacity: z.number().min(0),
         currentCount: z.number().default(0),
       }))
@@ -239,6 +244,10 @@ export const appRouter = router({
     delete: staffProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => { await db.deleteCapacity(input.id); return { success: true }; }),
+    // Update current count when order is placed
+    incrementCount: staffProcedure
+      .input(z.object({ capacityId: z.number(), increment: z.number().default(1) }))
+      .mutation(async ({ input }) => { await db.incrementCapacityCount(input.capacityId, input.increment); return { success: true }; }),
   }),
 
   // Bank Accounts

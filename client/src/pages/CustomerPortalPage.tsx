@@ -28,17 +28,16 @@ export default function CustomerPortalPage() {
   // Create order tab state
   const [senderInfo, setSenderInfo] = useState({ name: "", phone: "", address: "" });
   const [recipientInfo, setRecipientInfo] = useState({ name: "", phone: "", address: "" });
+  const [flowerItems, setFlowerItems] = useState<Array<{ flowerId: string; quantity: number; unit: string }>>([
+    { flowerId: "", quantity: 1, unit: "束" }
+  ]);
   const [orderDetails, setOrderDetails] = useState({
     deliveryType: "delivery" as "pickup" | "delivery",
     deliveryDate: "",
     timeslot: "09:00-12:00",
     category: "other" as "holiday" | "wedding" | "funeral" | "other",
-    flowerId: "",
-    quantity: 1,
-    quantityUnit: "束",
     cardContent: "",
     notes: "",
-    totalAmount: 0,
     paymentMethod: "bank" as "bank" | "no-payment",
     selectedBankId: "",
   });
@@ -117,14 +116,14 @@ export default function CustomerPortalPage() {
       toast.error("請選擇配送日期");
       return;
     }
-    if (!orderDetails.flowerId) {
-      toast.error("請選擇花卉");
+    if (flowerItems.length === 0 || !flowerItems[0].flowerId) {
+      toast.error("請至少選擇一種花卉");
       return;
     }
-
-    const selectedFlower = flowers.find(f => f.id === parseInt(orderDetails.flowerId));
-    const flowerPrice = selectedFlower?.price || 0;
-    const totalAmount = (flowerPrice * orderDetails.quantity) + (orderDetails.cardContent ? 100 : 0);
+    const totalAmount = flowerItems.reduce((sum, item) => {
+      const flower = flowers.find(f => f.id === parseInt(item.flowerId));
+      return sum + ((flower?.price || 0) * item.quantity);
+    }, 0) + (orderDetails.cardContent ? 100 : 0);
     const paymentNote = orderDetails.paymentMethod === "no-payment" ? "免付款（店內結清）" : "";
 
     createOrder.mutate({
@@ -139,16 +138,16 @@ export default function CustomerPortalPage() {
       deliveryDate: orderDetails.deliveryDate,
       timeslot: orderDetails.timeslot,
 
-      flowerId: parseInt(orderDetails.flowerId),
-      flowerName: selectedFlower?.name,
-      flowerQuantity: orderDetails.quantity,
-      flowerUnit: orderDetails.quantityUnit,
-      flowerPrice: flowerPrice,
+      flowerId: parseInt(flowerItems[0]?.flowerId || "0"),
+      flowerName: flowers.find(f => f.id === parseInt(flowerItems[0]?.flowerId || "0"))?.name,
+      flowerQuantity: flowerItems[0]?.quantity || 1,
+      flowerUnit: flowerItems[0]?.unit || "束",
+      flowerPrice: flowers.find(f => f.id === parseInt(flowerItems[0]?.flowerId || "0"))?.price || 0,
       needCard: !!orderDetails.cardContent,
       cardContent: orderDetails.cardContent,
       cardPrice: orderDetails.cardContent ? 100 : 0,
       category: orderDetails.category,
-      totalAmount: totalAmount,
+      totalAmount: Math.round(totalAmount),
       paymentNote: paymentNote,
     } as any);
   };
@@ -337,69 +336,89 @@ export default function CustomerPortalPage() {
                   </select>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-black uppercase mb-1">花卉</label>
-                  <select
-                    value={orderDetails.flowerId}
-                    onChange={(e) => setOrderDetails((o) => ({ ...o, flowerId: e.target.value }))}
-                    className="w-full px-4 py-3 bg-white border-[2px] border-black rounded-lg font-bold"
-                  >
-                    <option value="">選擇花卉</option>
-                    {flowers
-                      .filter((f) => f.category === orderDetails.category)
-                      .map((f) => (
-                        <option key={f.id} value={f.id}>
-                          {f.name}{f.price ? ` - $${f.price}` : ' - 自訂價格'}
-                        </option>
-                      ))}
-                  </select>
-                </div>
-
-                {/* Custom price input - only for isCustom flowers */}
-                {orderDetails.flowerId && (() => {
-                  const selected = flowers.find(f => f.id === parseInt(orderDetails.flowerId));
-                  return selected?.isCustom ? (
-                    <div>
-                      <label className="block text-xs font-black uppercase mb-1">自訂價格</label>
-                      <input
-                        type="number"
-                        min={0}
-                        value={orderDetails.totalAmount || ''}
-                        onChange={(e) => setOrderDetails((o) => ({ ...o, totalAmount: parseInt(e.target.value) || 0 }))}
-                        placeholder="請輸入價格"
-                        className="w-full px-4 py-3 bg-white border-[2px] border-black rounded-lg font-bold"
-                      />
+                {/* Multiple Flower Items */}
+                <div className="space-y-3">
+                  <label className="block text-xs font-black uppercase">花卉品項</label>
+                  {flowerItems.map((item, idx) => (
+                    <div key={idx} className="p-3 bg-white border-[2px] border-black rounded-lg space-y-2">
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-xs font-bold">品項 {idx + 1}</span>
+                        {flowerItems.length > 1 && (
+                          <button
+                            onClick={() => setFlowerItems(items => items.filter((_, i) => i !== idx))}
+                            className="text-xs font-bold text-[#FF7B6B] hover:underline"
+                          >
+                            刪除
+                          </button>
+                        )}
+                      </div>
+                      <select
+                        value={item.flowerId}
+                        onChange={(e) => setFlowerItems(items => {
+                          const newItems = [...items];
+                          newItems[idx].flowerId = e.target.value;
+                          return newItems;
+                        })}
+                        className="w-full px-3 py-2 bg-white border-[2px] border-black rounded-lg font-bold text-sm"
+                      >
+                        <option value="">選擇花卉</option>
+                        {flowers
+                          .filter((f) => f.category === orderDetails.category)
+                          .map((f) => (
+                            <option key={f.id} value={f.id}>
+                              {f.name}{f.price ? ` - NT$${f.price}` : ' - 自訂價格'}
+                            </option>
+                          ))}
+                      </select>
+                      <div className="grid grid-cols-2 gap-2">
+                        <input
+                          type="number"
+                          min={1}
+                          value={item.quantity}
+                          onChange={(e) => setFlowerItems(items => {
+                            const newItems = [...items];
+                            newItems[idx].quantity = parseInt(e.target.value) || 1;
+                            return newItems;
+                          })}
+                          placeholder="數量"
+                          className="px-2 py-1 bg-white border-[2px] border-black rounded-lg font-bold text-sm"
+                        />
+                        <input
+                          type="text"
+                          value={item.unit}
+                          onChange={(e) => setFlowerItems(items => {
+                            const newItems = [...items];
+                            newItems[idx].unit = e.target.value;
+                            return newItems;
+                          })}
+                          placeholder="單位"
+                          className="px-2 py-1 bg-white border-[2px] border-black rounded-lg font-bold text-sm"
+                        />
+                      </div>
+                      {item.flowerId && (() => {
+                        const flower = flowers.find(f => f.id === parseInt(item.flowerId));
+                        return (
+                          <div className="text-xs font-bold text-black/60 text-right">
+                            小計: NT$ {((flower?.price || 0) * item.quantity)}
+                          </div>
+                        );
+                      })()}
                     </div>
-                  ) : null;
-                })()}
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-black uppercase mb-1">數量</label>
-                    <input
-                      type="number"
-                      min={1}
-                      value={orderDetails.quantity}
-                      onChange={(e) => setOrderDetails((o) => ({ ...o, quantity: parseInt(e.target.value) }))}
-                      className="w-full px-4 py-3 bg-white border-[2px] border-black rounded-lg font-bold"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-black uppercase mb-1">單位</label>
-                    <input
-                      type="text"
-                      value={orderDetails.quantityUnit}
-                      onChange={(e) => setOrderDetails((o) => ({ ...o, quantityUnit: e.target.value }))}
-                      className="w-full px-4 py-3 bg-white border-[2px] border-black rounded-lg font-bold"
-                    />
-                  </div>
+                  ))}
+                  <button
+                    onClick={() => setFlowerItems(items => [...items, { flowerId: "", quantity: 1, unit: "束" }])}
+                    className="w-full py-2 bg-[#B8F0D8] border-[2px] border-black rounded-lg font-black text-sm hover:bg-[#9FE5C8]"
+                  >
+                    + 新增花卉
+                  </button>
                 </div>
-                
+
                 {/* Total Amount Display */}
-                {orderDetails.flowerId && (() => {
-                  const selected = flowers.find(f => f.id === parseInt(orderDetails.flowerId));
-                  const price = selected?.price || 0;
-                  const total = (price * orderDetails.quantity) + (orderDetails.cardContent ? 100 : 0);
+                {flowerItems.some(item => item.flowerId) && (() => {
+                  const total = flowerItems.reduce((sum, item) => {
+                    const flower = flowers.find(f => f.id === parseInt(item.flowerId));
+                    return sum + ((flower?.price || 0) * item.quantity);
+                  }, 0) + (orderDetails.cardContent ? 100 : 0);
                   return (
                     <div className="p-4 bg-[#FFF0A0] border-[2px] border-black rounded-lg">
                       <div className="flex justify-between items-center">
@@ -410,6 +429,7 @@ export default function CustomerPortalPage() {
                     </div>
                   );
                 })()}
+
               </div>
             </div>
 

@@ -172,31 +172,18 @@ export async function deleteFlower(id: number) {
 
 // ─── Timeslot Capacities ──────────────────────────────────────────────────────
 // Helper: count active orders for a given date+timeslot+category combination
-async function countOrdersForSlot(dbInst: any, date: string, timeslot: string, category: string): Promise<number> {
+async function countOrdersForFlowerSlot(dbInst: any, date: string, timeslot: string, flowerId: number): Promise<number> {
   const activeStatuses = ["pending", "confirmed", "awaiting_payment", "paid", "processing"];
-  let query = dbInst.select({ count: sql<number>`COUNT(*)` })
+  const result = await dbInst.select({ count: sql<number>`COUNT(*)` })
     .from(orders)
     .where(
       and(
         eq(orders.deliveryDate, date),
         eq(orders.timeslot, timeslot),
+        eq(orders.flowerId, flowerId),
         sql`${orders.status} IN (${sql.raw(activeStatuses.map(s => `'${s}'`).join(","))})`
       )
     );
-  // If category is not 'all', also filter by category
-  if (category !== "all") {
-    query = dbInst.select({ count: sql<number>`COUNT(*)` })
-      .from(orders)
-      .where(
-        and(
-          eq(orders.deliveryDate, date),
-          eq(orders.timeslot, timeslot),
-          eq(orders.category, category as any),
-          sql`${orders.status} IN (${sql.raw(activeStatuses.map(s => `'${s}'`).join(","))})`
-        )
-      );
-  }
-  const result = await query;
   return Number(result[0]?.count ?? 0);
 }
 
@@ -207,7 +194,7 @@ export async function getCapacitiesByDate(date: string) {
   // Dynamically compute currentCount from actual orders
   return Promise.all(caps.map(async cap => ({
     ...cap,
-    currentCount: await countOrdersForSlot(db, date, cap.timeslot, cap.category),
+    currentCount: await countOrdersForFlowerSlot(db, date, cap.timeslot, cap.flowerId),
   })));
 }
 
@@ -223,8 +210,33 @@ export async function getCapacitiesByDateRange(startDate: string, endDate: strin
   // Dynamically compute currentCount from actual orders
   return Promise.all(caps.map(async cap => ({
     ...cap,
-    currentCount: await countOrdersForSlot(db, cap.date, cap.timeslot, cap.category),
+    currentCount: await countOrdersForFlowerSlot(db, cap.date, cap.timeslot, cap.flowerId),
   })));
+}
+
+export async function getCapacity(date: string, timeslot: string, flowerId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const cap = await db.select().from(timeslotCapacities).where(
+    and(
+      eq(timeslotCapacities.date, date),
+      eq(timeslotCapacities.timeslot, timeslot),
+      eq(timeslotCapacities.flowerId, flowerId)
+    )
+  );
+  if (cap.length === 0) return null;
+  return {
+    ...cap[0],
+    currentCount: await countOrdersForFlowerSlot(db, date, timeslot, flowerId),
+  };
+}
+
+export async function incrementCapacityCount(capacityId: number, increment: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.update(timeslotCapacities)
+    .set({ currentCount: sql`${timeslotCapacities.currentCount} + ${increment}` })
+    .where(eq(timeslotCapacities.id, capacityId));
 }
 
 export async function upsertCapacity(data: InsertTimeslotCapacity) {
@@ -240,6 +252,12 @@ export async function deleteCapacity(id: number) {
   const db = await getDb();
   if (!db) throw new Error("DB not available");
   await db.delete(timeslotCapacities).where(eq(timeslotCapacities.id, id));
+}
+
+// Legacy function for backward compatibility
+async function countOrdersForSlot(dbInst: any, date: string, timeslot: string, category: string): Promise<number> {
+  // This is deprecated - use countOrdersForFlowerSlot instead
+  return 0;
 }
 
 // ─── Bank Accounts ────────────────────────────────────────────────────────────

@@ -2,31 +2,58 @@ import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 
-const categoryLabels = { all: "全部", holiday: "節慶花卉配送", wedding: "婚禮", funeral: "喪禮", other: "其他" };
-
 export default function AdminCapacitiesPage() {
   const utils = trpc.useUtils();
   const today = new Date().toISOString().split("T")[0];
   const [selectedDate, setSelectedDate] = useState(today);
+  
+  // Queries
+  const { data: flowers = [] } = trpc.flowers.list.useQuery();
   const { data: caps = [], isLoading } = trpc.capacities.byDate.useQuery({ date: selectedDate });
-  const [form, setForm] = useState({ timeslot: "09:00-12:00", category: "all" as "all"|"holiday"|"wedding"|"funeral"|"other", maxCapacity: 10 });
+  
+  const [form, setForm] = useState({ 
+    timeslot: "09:00-12:00", 
+    flowerId: "",
+    maxCapacity: 10 
+  });
 
   const upsert = trpc.capacities.upsert.useMutation({
-    onSuccess: () => { toast.success("已設定容量"); utils.capacities.byDate.invalidate({ date: selectedDate }); },
+    onSuccess: () => { 
+      toast.success("已設定容量"); 
+      utils.capacities.byDate.invalidate({ date: selectedDate }); 
+      setForm({ timeslot: "09:00-12:00", flowerId: "", maxCapacity: 10 });
+    },
     onError: e => toast.error(e.message),
   });
+  
   const del = trpc.capacities.delete.useMutation({
-    onSuccess: () => { toast.success("已刪除"); utils.capacities.byDate.invalidate({ date: selectedDate }); },
+    onSuccess: () => { 
+      toast.success("已刪除"); 
+      utils.capacities.byDate.invalidate({ date: selectedDate }); 
+    },
     onError: e => toast.error(e.message),
   });
 
   const timeslotOptions = ["09:00-12:00","12:00-15:00","15:00-18:00","18:00-21:00","全天"];
 
+  const handleUpsert = () => {
+    if (!form.flowerId) {
+      toast.error("請選擇花卉品種");
+      return;
+    }
+    upsert.mutate({ 
+      date: selectedDate, 
+      timeslot: form.timeslot,
+      flowerId: parseInt(form.flowerId),
+      maxCapacity: form.maxCapacity 
+    } as any);
+  };
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="memphis-title text-3xl text-black">容量設定</h1>
-        <p className="text-black font-bold mt-1">設定各日期時段的訂單容量上限</p>
+        <p className="text-black font-bold mt-1">設定各日期時段的花卉品種容量上限</p>
       </div>
 
       {/* Date selector */}
@@ -45,11 +72,16 @@ export default function AdminCapacitiesPage() {
               <option value="custom">自訂...</option>
             </select>
           </div>
-          <div>
-            <label className="block text-xs font-black uppercase mb-1">類別</label>
-            <select value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value as any }))}
-              className="px-3 py-2 bg-white border-[2px] border-black rounded-lg font-bold">
-              {Object.entries(categoryLabels).map(([v,l]) => <option key={v} value={v}>{l}</option>)}
+          <div className="flex-1 min-w-[200px]">
+            <label className="block text-xs font-black uppercase mb-1">花卉品種</label>
+            <select value={form.flowerId} onChange={e => setForm(f => ({ ...f, flowerId: e.target.value }))}
+              className="w-full px-3 py-2 bg-white border-[2px] border-black rounded-lg font-bold">
+              <option value="">選擇花卉</option>
+              {flowers.map(f => (
+                <option key={f.id} value={f.id}>
+                  {f.name}{f.price ? ` - NT$${f.price}` : ''}
+                </option>
+              ))}
             </select>
           </div>
           <div>
@@ -58,7 +90,7 @@ export default function AdminCapacitiesPage() {
               className="w-24 px-3 py-2 bg-white border-[2px] border-black rounded-lg font-bold" />
           </div>
           <div className="flex items-end">
-            <button onClick={() => upsert.mutate({ date: selectedDate, ...form })}
+            <button onClick={handleUpsert}
               className="memphis-btn px-5 py-2.5 bg-[#FF7B6B] text-white font-black uppercase rounded-lg">
               設定容量
             </button>
@@ -81,12 +113,13 @@ export default function AdminCapacitiesPage() {
             {caps.map(cap => {
               const pct = cap.maxCapacity > 0 ? Math.min(100, Math.round((cap.currentCount / cap.maxCapacity) * 100)) : 0;
               const isFull = cap.currentCount >= cap.maxCapacity;
+              const flower = flowers.find(f => f.id === cap.flowerId);
               return (
                 <div key={cap.id} className="p-4 flex items-center justify-between">
                   <div className="flex items-center gap-4">
                     <div className="text-center">
                       <div className="font-black text-lg">{cap.timeslot}</div>
-                      <div className="text-xs font-bold text-gray-500">{categoryLabels[cap.category as keyof typeof categoryLabels]}</div>
+                      <div className="text-xs font-bold text-gray-500">{flower?.name || '未知花卉'}</div>
                     </div>
                     <div className="flex items-center gap-3">
                       <div className="w-32 h-3 bg-gray-200 border-[2px] border-black rounded-full overflow-hidden">
@@ -98,7 +131,7 @@ export default function AdminCapacitiesPage() {
                     </div>
                   </div>
                   <button onClick={() => { if (confirm("確定刪除此容量設定？")) del.mutate({ id: cap.id }); }}
-                    className="memphis-btn px-3 py-1.5 bg-[#FF7B6B] text-white font-black text-xs uppercase rounded-lg">
+                    className="px-3 py-1 text-xs font-bold text-[#FF7B6B] hover:bg-[#FFE5E0] rounded-lg transition">
                     刪除
                   </button>
                 </div>
