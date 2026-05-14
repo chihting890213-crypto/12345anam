@@ -97,7 +97,12 @@ export default function AdminFlowersPage() {
     onError: (e) => toast.error(e.message),
   });
 
-  const categoryLabel = (c: string) => (c === "holiday" ? "節慶花卉配送" : "其他");
+  const categoryLabel = (c: string) => {
+    if (c === "holiday") return "節慶花卉配送";
+    if (c === "wedding") return "婚礼";
+    if (c === "funeral") return "喪禮";
+    return "其他";
+  };
 
   // Get flowers for selected folder
   const selectedFolder = folders.find((f) => f.id === selectedFolderId);
@@ -407,7 +412,7 @@ export default function AdminFlowersPage() {
                         className="w-full px-4 py-3 bg-white border-[2px] border-black rounded-lg font-bold"
                       >
                         <option value="holiday">節慶花卉配送</option>
-                        <option value="wedding">婚禮</option>
+                        <option value="wedding">婚礼</option>
                         <option value="funeral">喪禮</option>
                         <option value="other">其他</option>
                       </select>

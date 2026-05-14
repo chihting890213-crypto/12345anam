@@ -148,7 +148,7 @@ export default function CustomerPortalPage() {
       cardContent: orderDetails.cardContent,
       cardPrice: orderDetails.cardContent ? 100 : 0,
       category: orderDetails.category,
-      totalAmount: String(totalAmount),
+      totalAmount: totalAmount,
       paymentNote: paymentNote,
     } as any);
   };
@@ -394,6 +394,22 @@ export default function CustomerPortalPage() {
                     />
                   </div>
                 </div>
+                
+                {/* Total Amount Display */}
+                {orderDetails.flowerId && (() => {
+                  const selected = flowers.find(f => f.id === parseInt(orderDetails.flowerId));
+                  const price = selected?.price || 0;
+                  const total = (price * orderDetails.quantity) + (orderDetails.cardContent ? 100 : 0);
+                  return (
+                    <div className="p-4 bg-[#FFF0A0] border-[2px] border-black rounded-lg">
+                      <div className="flex justify-between items-center">
+                        <span className="font-black uppercase text-sm">估計總金額</span>
+                        <span className="font-black text-2xl text-[#FF7B6B]">NT$ {total}</span>
+                      </div>
+                      {orderDetails.cardContent && <div className="text-xs font-bold text-black/60 mt-2">包含卡片費用 NT$ 100</div>}
+                    </div>
+                  );
+                })()}
               </div>
             </div>
 
