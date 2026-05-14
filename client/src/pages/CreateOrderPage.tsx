@@ -3,11 +3,24 @@ import { trpc } from "@/lib/trpc";
 import { useStaffAuth } from "@/contexts/StaffAuthContext";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
+import { Button } from "@/components/ui/button";
+import { X, Plus } from "lucide-react";
 
 const categoryOptions = [
   { value: "holiday", label: "節慶花卉配送" },
+  { value: "wedding", label: "婚禮" },
+  { value: "funeral", label: "喪禮" },
   { value: "other", label: "其他（自填）" },
 ];
+
+interface FlowerItem {
+  id: string;
+  flowerId?: number;
+  flowerName: string;
+  quantity: number;
+  unit: string;
+  price: number;
+}
 
 export default function CreateOrderPage() {
   const { staff } = useStaffAuth();
@@ -20,13 +33,11 @@ export default function CreateOrderPage() {
     recipientName: "", recipientPhone: "", recipientAddress: "",
     deliveryType: "pickup" as "pickup" | "delivery",
     deliveryDate: "", timeslot: "",
-    flowerId: undefined as number | undefined,
-    flowerName: "", flowerQuantity: "1", flowerUnit: "束",
-    customFlowerPrice: "", flowerPrice: "",
-    needCard: false, cardContent: "", cardPrice: "0",
-    category: "other" as "holiday" | "other",
+    flowerItems: [{ id: "1", flowerId: undefined as number | undefined, flowerName: "", quantity: 1, unit: "束", price: 0 }] as FlowerItem[],
+    needCard: false, cardContent: "", cardPrice: 0,
+    category: "other" as "holiday" | "wedding" | "funeral" | "other",
     categoryNote: "",
-    totalAmount: "0",
+    paymentMethod: "bank" as "bank" | "no_payment",
     internalNote: "",
     createdByStaff: true,
     staffId: staff?.id,
@@ -34,14 +45,38 @@ export default function CreateOrderPage() {
 
   const setF = (field: string, value: any) => setForm(f => ({ ...f, [field]: value }));
 
-  const selectedFlower = flowers.find(f => f.id === form.flowerId);
+  const updateFlowerItem = (id: string, field: string, value: any) => {
+    setForm(f => ({
+      ...f,
+      flowerItems: f.flowerItems.map(item =>
+        item.id === id ? { ...item, [field]: value } : item
+      )
+    }));
+  };
+
+  const addFlowerItem = () => {
+    const newId = String(Math.max(...form.flowerItems.map(i => parseInt(i.id) || 0), 0) + 1);
+    setForm(f => ({
+      ...f,
+      flowerItems: [...f.flowerItems, { id: newId, flowerId: undefined, flowerName: "", quantity: 1, unit: "束", price: 0 }]
+    }));
+  };
+
+  const removeFlowerItem = (id: string) => {
+    if (form.flowerItems.length <= 1) {
+      toast.error("至少需要一個花卉品項");
+      return;
+    }
+    setForm(f => ({
+      ...f,
+      flowerItems: f.flowerItems.filter(item => item.id !== id)
+    }));
+  };
 
   const calcTotal = () => {
-    const flowerP = form.flowerId && selectedFlower && !selectedFlower.isCustom
-      ? Number(selectedFlower.price || 0) * Number(form.flowerQuantity || 1)
-      : Number(form.customFlowerPrice || 0);
-    const cardP = form.needCard ? Number(form.cardPrice || 0) : 0;
-    return String(flowerP + cardP);
+    const flowerTotal = form.flowerItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    const cardTotal = form.needCard ? form.cardPrice : 0;
+    return flowerTotal + cardTotal;
   };
 
   const createMutation = trpc.orders.create.useMutation({
@@ -60,8 +95,19 @@ export default function CreateOrderPage() {
     if (!form.senderName || !form.senderPhone) { toast.error("請填寫寄件人資訊"); return; }
     if (!form.recipientName || !form.recipientPhone) { toast.error("請填寫收件人資訊"); return; }
     if (form.deliveryType === "delivery" && !form.recipientAddress) { toast.error("外送需填寫地址"); return; }
+    if (form.flowerItems.some(item => !item.flowerId && !item.flowerName)) { toast.error("請填寫所有花卉資訊"); return; }
+    if (form.flowerItems.some(item => item.price <= 0)) { toast.error("花卉價格必須大於 0"); return; }
+
     const total = calcTotal();
-    createMutation.mutate({ ...form, totalAmount: total, flowerPrice: form.flowerPrice || String(selectedFlower?.price || "") });
+    createMutation.mutate({
+      ...form,
+      totalAmount: total,
+      flowerPrice: String(form.flowerItems[0]?.price || 0),
+      flowerId: form.flowerItems[0]?.flowerId,
+      flowerName: form.flowerItems[0]?.flowerName || "",
+      quantity: form.flowerItems[0]?.quantity || 1,
+      quantityUnit: form.flowerItems[0]?.unit || "束",
+    } as any);
   };
 
   const inputCls = "w-full px-3 py-2 bg-white border-[2px] border-black rounded-lg font-bold text-sm";
@@ -118,7 +164,6 @@ export default function CreateOrderPage() {
                 <label className={labelCls}>配送地址 *</label>
                 <input value={form.recipientAddress} onChange={e => setF("recipientAddress", e.target.value)} className={inputCls} placeholder="台北市信義區..." />
               </div>
-
             </div>
           )}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
@@ -133,10 +178,10 @@ export default function CreateOrderPage() {
           </div>
         </div>
 
-        {/* Flower selection */}
+        {/* Category */}
         <div className="memphis-card p-6 bg-[#FFD6C0]">
-          <h2 className="memphis-title text-lg mb-4">🌸 花卉選擇</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          <h2 className="memphis-title text-lg mb-4">📋 訂單類別</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className={labelCls}>類別</label>
               <select value={form.category} onChange={e => setF("category", e.target.value)} className={inputCls}>
@@ -147,53 +192,79 @@ export default function CreateOrderPage() {
               <div><label className={labelCls}>類別說明</label><input value={form.categoryNote} onChange={e => setF("categoryNote", e.target.value)} className={inputCls} placeholder="請說明..." /></div>
             )}
           </div>
+        </div>
 
-          <div className="mb-4">
-            <label className={labelCls}>花卉款式</label>
-            <select value={form.flowerId || ""} onChange={e => {
-              const id = e.target.value ? Number(e.target.value) : undefined;
-              const flower = flowers.find(f => f.id === id);
-              setForm(f => ({ ...f, flowerId: id, flowerName: flower?.name || "", flowerUnit: flower?.unit || "束", flowerPrice: flower?.price || "" }));
-            }} className={inputCls}>
-              <option value="">選擇花卉款式</option>
-              {noFolderFlowers.map(f => <option key={f.id} value={f.id}>{f.name} - NT$ {f.isCustom ? "自訂" : f.price}/{f.unit}</option>)}
-              {flowersByFolder.filter(g => g.flowers.length > 0).map(g => (
-                <optgroup key={g.folder.id} label={`📁 ${g.folder.name}`}>
-                  {g.flowers.map(f => <option key={f.id} value={f.id}>{f.name} - NT$ {f.isCustom ? "自訂" : f.price}/{f.unit}</option>)}
-                </optgroup>
-              ))}
-            </select>
+        {/* Flower items */}
+        <div className="memphis-card p-6 bg-[#FFD6C0]">
+          <h2 className="memphis-title text-lg mb-4">🌸 花卉選擇</h2>
+          <div className="space-y-4">
+            {form.flowerItems.map((item, idx) => {
+              const selectedFlower = flowers.find(f => f.id === item.flowerId);
+              return (
+                <div key={item.id} className="p-4 border-[2px] border-black rounded-lg bg-white">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="font-black text-sm">品項 {idx + 1}</span>
+                    {form.flowerItems.length > 1 && (
+                      <button type="button" onClick={() => removeFlowerItem(item.id)}
+                        className="p-1 hover:bg-red-100 rounded">
+                        <X size={18} className="text-red-600" />
+                      </button>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+                    <div>
+                      <label className={labelCls}>花卉款式</label>
+                      <select value={item.flowerId || ""} onChange={e => {
+                        const id = e.target.value ? Number(e.target.value) : undefined;
+                        const flower = flowers.find(f => f.id === id);
+                        updateFlowerItem(item.id, "flowerId", id);
+                        updateFlowerItem(item.id, "flowerName", flower?.name || "");
+                        updateFlowerItem(item.id, "unit", flower?.unit || "束");
+                        updateFlowerItem(item.id, "price", flower?.price || 0);
+                      }} className={inputCls}>
+                        <option value="">選擇花卉款式</option>
+                        {noFolderFlowers.map(f => <option key={f.id} value={f.id}>{f.name} - NT$ {f.isCustom ? "自訂" : f.price}/{f.unit}</option>)}
+                        {flowersByFolder.filter(g => g.flowers.length > 0).map(g => (
+                          <optgroup key={g.folder.id} label={`📁 ${g.folder.name}`}>
+                            {g.flowers.map(f => <option key={f.id} value={f.id}>{f.name} - NT$ {f.isCustom ? "自訂" : f.price}/{f.unit}</option>)}
+                          </optgroup>
+                        ))}
+                      </select>
+                    </div>
+                    {selectedFlower?.isCustom && (
+                      <div>
+                        <label className={labelCls}>自訂花卉名稱</label>
+                        <input value={item.flowerName} onChange={e => updateFlowerItem(item.id, "flowerName", e.target.value)} className={inputCls} placeholder="請描述..." />
+                      </div>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div>
+                      <label className={labelCls}>數量</label>
+                      <input type="number" min={1} value={item.quantity} onChange={e => updateFlowerItem(item.id, "quantity", Number(e.target.value))} className={inputCls} />
+                    </div>
+                    <div>
+                      <label className={labelCls}>單位</label>
+                      <input value={item.unit} onChange={e => updateFlowerItem(item.id, "unit", e.target.value)} className={inputCls} placeholder="束、對、盆..." />
+                    </div>
+                    <div>
+                      <label className={labelCls}>價格（NT$）</label>
+                      <input type="number" min={0} value={item.price} onChange={e => updateFlowerItem(item.id, "price", Number(e.target.value))} className={inputCls} />
+                    </div>
+                  </div>
+                  {item.price > 0 && (
+                    <div className="mt-3 p-2 bg-[#B8F0D8] border-[2px] border-black rounded-lg">
+                      <span className="font-black text-sm">💰 小計：NT$ {item.price * item.quantity}</span>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+            <button type="button" onClick={addFlowerItem}
+              className="w-full py-2.5 border-[2px] border-dashed border-black rounded-lg font-black text-sm uppercase hover:bg-gray-50 flex items-center justify-center gap-2">
+              <Plus size={18} /> 新增花卉
+            </button>
           </div>
-
-          {selectedFlower?.isCustom && (
-            <div className="mb-4">
-              <label className={labelCls}>自訂花卉名稱</label>
-              <input value={form.flowerName} onChange={e => setF("flowerName", e.target.value)} className={inputCls} placeholder="請描述您想要的花卉..." />
-            </div>
-          )}
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className={labelCls}>數量</label>
-              <input type="number" min={1} value={form.flowerQuantity} onChange={e => setF("flowerQuantity", e.target.value)} className={inputCls} />
-            </div>
-            <div>
-              <label className={labelCls}>單位</label>
-              <input value={form.flowerUnit} onChange={e => setF("flowerUnit", e.target.value)} className={inputCls} placeholder="束、對、盆..." />
-            </div>
-            {(selectedFlower?.isCustom || !form.flowerId) && (
-              <div>
-                <label className={labelCls}>花卉價格（NT$）</label>
-                <input type="number" value={form.customFlowerPrice} onChange={e => setF("customFlowerPrice", e.target.value)} className={inputCls} placeholder="0" />
-              </div>
-            )}
-          </div>
-
-          {selectedFlower && !selectedFlower.isCustom && (
-            <div className="mt-3 p-3 bg-[#B8F0D8] border-[2px] border-black rounded-lg">
-              <span className="font-black text-sm">💰 花卉小計：NT$ {Number(selectedFlower.price || 0) * Number(form.flowerQuantity || 1)}</span>
-            </div>
-          )}
         </div>
 
         {/* Card */}
@@ -211,10 +282,23 @@ export default function CreateOrderPage() {
               </div>
               <div>
                 <label className={labelCls}>卡片費用（NT$）</label>
-                <input type="number" value={form.cardPrice} onChange={e => setF("cardPrice", e.target.value)} className={inputCls} />
+                <input type="number" min={0} value={form.cardPrice} onChange={e => setF("cardPrice", Number(e.target.value))} className={inputCls} />
               </div>
             </div>
           )}
+        </div>
+
+        {/* Payment Method */}
+        <div className="memphis-card p-6 bg-[#D4C5F9]">
+          <h2 className="memphis-title text-lg mb-4">💳 付款方式</h2>
+          <div className="flex gap-4">
+            {(["bank", "no_payment"] as const).map(method => (
+              <button key={method} type="button" onClick={() => setF("paymentMethod", method)}
+                className={`memphis-btn px-5 py-2.5 font-black text-sm uppercase rounded-lg ${form.paymentMethod === method ? "bg-[#FF7B6B] text-white" : "bg-white text-black"}`}>
+                {method === "bank" ? "🏦 銀行轉帳" : "🏪 免付款（店內結清）"}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Notes */}
@@ -231,7 +315,7 @@ export default function CreateOrderPage() {
           <div className="flex items-center justify-between">
             <div>
               <h2 className="memphis-title text-2xl text-white">訂單總金額</h2>
-              <p className="text-white/80 font-bold text-sm mt-1">花卉 + 卡片 + 運費</p>
+              <p className="text-white/80 font-bold text-sm mt-1">所有花卉 + 卡片</p>
             </div>
             <div className="text-right">
               <div className="text-4xl font-black text-white">NT$ {calcTotal()}</div>

@@ -27,7 +27,9 @@ export default function CustomerPortalPage() {
 
   // Create order tab state
   const [senderInfo, setSenderInfo] = useState({ name: "", phone: "", address: "" });
-  const [recipientInfo, setRecipientInfo] = useState({ name: "", phone: "", address: "" });
+  const [showOrderSuccess, setShowOrderSuccess] = useState(false);
+  const [createdOrderNumber, setCreatedOrderNumber] = useState("");
+    const [recipientInfo, setRecipientInfo] = useState({ name: "", phone: "", address: "" });
   const [flowerItems, setFlowerItems] = useState<Array<{ flowerId: string; quantity: number; unit: string }>>([
     { flowerId: "", quantity: 1, unit: "束" }
   ]);
@@ -67,28 +69,22 @@ export default function CustomerPortalPage() {
 
   const createOrder = trpc.orders.create.useMutation({
     onSuccess: (result) => {
-      toast.success(`訂單已建立！訂單編號：${result.orderNumber}`);
+      setCreatedOrderNumber(result.orderNumber);
+      setShowOrderSuccess(true);
       setOrderNumber("");
       setOrderDetails({
         deliveryType: "delivery",
         deliveryDate: "",
         timeslot: "09:00-12:00",
         category: "other",
-        flowerId: "",
-        quantity: 1,
-        quantityUnit: "束",
         cardContent: "",
         notes: "",
-        totalAmount: 0,
         paymentMethod: "bank",
         selectedBankId: "",
       });
       setSenderInfo({ name: "", phone: "", address: "" });
       setRecipientInfo({ name: "", phone: "", address: "" });
-      // Switch to query tab and pre-fill the order number
-      setOrderNumber(result.orderNumber);
-      setQueriedNumber(result.orderNumber);
-      setActiveTab("query");
+      setFlowerItems([{ flowerId: "", quantity: 1, unit: "束" }]);
     },
     onError: (e) => toast.error(e.message),
   });
@@ -101,6 +97,11 @@ export default function CustomerPortalPage() {
     }
     setQueriedNumber(orderNumber.trim());
   };
+  const copyToClipboard = () => {
+    navigator.clipboard.writeText(createdOrderNumber);
+    toast.success("訂單編號已複製！");
+  };
+
 
   const handleCreateOrder = (e: React.FormEvent) => {
     e.preventDefault();
@@ -419,7 +420,46 @@ export default function CustomerPortalPage() {
                     const flower = flowers.find(f => f.id === parseInt(item.flowerId));
                     return sum + ((flower?.price || 0) * item.quantity);
                   }, 0) + (orderDetails.cardContent ? 100 : 0);
-                  return (
+                
+  // Order success modal
+  if (showOrderSuccess) {
+    return (
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+        <div className="memphis-card p-8 bg-white max-w-md w-full">
+          <div className="text-center">
+            <div className="text-5xl mb-4">✅</div>
+            <h2 className="memphis-title text-2xl text-black mb-2">訂單建立成功！</h2>
+            <p className="text-black font-bold mb-6">感謝您的訂單</p>
+            
+            <div className="bg-[#FFF0A0] border-[2px] border-black rounded-lg p-4 mb-6">
+              <p className="text-xs font-black uppercase text-black/60 mb-2">訂單編號</p>
+              <p className="text-2xl font-black text-black break-all">{createdOrderNumber}</p>
+            </div>
+            
+            <p className="text-sm font-bold text-black/70 mb-6">📋 請複製此訂單編號以利查詢</p>
+            
+            <div className="flex gap-3">
+              <button onClick={copyToClipboard}
+                className="flex-1 py-2.5 bg-[#FF7B6B] text-white font-black uppercase rounded-lg hover:opacity-90">
+                📋 複製編號
+              </button>
+              <button onClick={() => {
+                setShowOrderSuccess(false);
+                setQueriedNumber(createdOrderNumber);
+                setOrderNumber(createdOrderNumber);
+                setActiveTab("query");
+              }}
+                className="flex-1 py-2.5 bg-[#B8F0D8] text-black font-black uppercase rounded-lg hover:opacity-90">
+                查詢訂單
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
                     <div className="p-4 bg-[#FFF0A0] border-[2px] border-black rounded-lg">
                       <div className="flex justify-between items-center">
                         <span className="font-black uppercase text-sm">估計總金額</span>
