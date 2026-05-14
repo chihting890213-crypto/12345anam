@@ -39,6 +39,8 @@ export default function CustomerPortalPage() {
     cardContent: "",
     notes: "",
     totalAmount: 0,
+    paymentMethod: "bank" as "bank" | "no-payment",
+    selectedBankId: "",
   });
 
   // Queries
@@ -79,6 +81,8 @@ export default function CustomerPortalPage() {
         cardContent: "",
         notes: "",
         totalAmount: 0,
+        paymentMethod: "bank",
+        selectedBankId: "",
       });
       setSenderInfo({ name: "", phone: "", address: "" });
       setRecipientInfo({ name: "", phone: "", address: "" });
@@ -118,9 +122,15 @@ export default function CustomerPortalPage() {
       return;
     }
 
+    const selectedFlower = flowers.find(f => f.id === parseInt(orderDetails.flowerId));
+    const flowerPrice = selectedFlower?.price || 0;
+    const totalAmount = (flowerPrice * orderDetails.quantity) + (orderDetails.cardContent ? 100 : 0);
+    const paymentNote = orderDetails.paymentMethod === "no-payment" ? "免付款（店內結清）" : "";
+
     createOrder.mutate({
       senderName: senderInfo.name,
       senderPhone: senderInfo.phone,
+      senderEmail: "",
       senderAddress: senderInfo.address,
       recipientName: recipientInfo.name,
       recipientPhone: recipientInfo.phone,
@@ -130,11 +140,16 @@ export default function CustomerPortalPage() {
       timeslot: orderDetails.timeslot,
 
       flowerId: parseInt(orderDetails.flowerId),
-      quantity: orderDetails.quantity,
-      quantityUnit: orderDetails.quantityUnit,
+      flowerName: selectedFlower?.name,
+      flowerQuantity: orderDetails.quantity,
+      flowerUnit: orderDetails.quantityUnit,
+      flowerPrice: flowerPrice,
+      needCard: !!orderDetails.cardContent,
       cardContent: orderDetails.cardContent,
-      notes: orderDetails.notes,
+      cardPrice: orderDetails.cardContent ? 100 : 0,
       category: orderDetails.category,
+      totalAmount: String(totalAmount),
+      paymentNote: paymentNote,
     } as any);
   };
 
@@ -377,6 +392,36 @@ export default function CustomerPortalPage() {
                       onChange={(e) => setOrderDetails((o) => ({ ...o, quantityUnit: e.target.value }))}
                       className="w-full px-4 py-3 bg-white border-[2px] border-black rounded-lg font-bold"
                     />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Payment Method */}
+            <div className="memphis-card p-6 bg-[#D4C5F9]">
+              <h2 className="font-black text-lg uppercase mb-4">💳 付款方式</h2>
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-xs font-black uppercase mb-2">選擇付款方式</label>
+                  <div className="flex gap-4">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        checked={orderDetails.paymentMethod === "bank"}
+                        onChange={() => setOrderDetails((o) => ({ ...o, paymentMethod: "bank" }))}
+                        className="w-4 h-4"
+                      />
+                      <span className="font-bold">銀行轉帳</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        checked={orderDetails.paymentMethod === "no-payment"}
+                        onChange={() => setOrderDetails((o) => ({ ...o, paymentMethod: "no-payment" }))}
+                        className="w-4 h-4"
+                      />
+                      <span className="font-bold">免付款（店內結清）</span>
+                    </label>
                   </div>
                 </div>
               </div>
